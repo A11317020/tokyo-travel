@@ -207,42 +207,118 @@ const DEFAULT_ITINERARIES = [
     note: "已訂位，人數：5 人，訂位確認代號：S45YFC7AML"
   },
   {
-    id: "iti-11",
+    id: "iti-11-1",
     date: "2026-06-25",
     dayLabel: "Day 4",
-    startTime: "14:00",
-    endTime: "21:00",
-    area: "新宿 / 東京站",
-    title: "東京市區景點與商場自由行程",
-    category: "自由活動",
-    locationName: "新宿商圈、東京車站地下街購物",
-    address: "",
-    googleMapUrl: "",
-    transportNote: "搭乘 JR 山手線或丸之內線移動",
+    startTime: "14:30",
+    endTime: "16:30",
+    area: "原宿",
+    title: "明治神宮參拜",
+    category: "景點",
+    locationName: "明治神宮",
+    address: "東京都澀谷區代代木神園町 1-1",
+    googleMapUrl: "https://www.google.com/maps/search/?api=1&query=Meiji+Jingu+Tokyo",
+    transportNote: "從池袋搭乘 JR 山手線至原宿站",
     reservationStatus: "none",
-    priority: "low",
+    priority: "medium",
     isFlexible: true,
     backupPlan: "",
-    note: "彈性安排，可分組行動，晚上可在東京站吃拉麵備選"
+    note: "參拜明治神宮，漫步於神宮內著名的參道與大鳥居。"
   },
   {
-    id: "iti-12",
+    id: "iti-11-2",
+    date: "2026-06-25",
+    dayLabel: "Day 4",
+    startTime: "16:30",
+    endTime: "18:30",
+    area: "原宿",
+    title: "原宿竹下通與表參道逛街",
+    category: "購物",
+    locationName: "竹下通 / 表參道",
+    address: "東京都澀谷區神宮前",
+    googleMapUrl: "https://www.google.com/maps/search/?api=1&query=Takeshita+Street+Harajuku",
+    transportNote: "步行",
+    reservationStatus: "none",
+    priority: "medium",
+    isFlexible: true,
+    backupPlan: "",
+    note: "原宿竹下通、表參道逛街，體驗東京流行與潮流時尚文化。"
+  },
+  {
+    id: "iti-11-3",
+    date: "2026-06-25",
+    dayLabel: "Day 4",
+    startTime: "18:30",
+    endTime: "21:30",
+    area: "新宿",
+    title: "新宿商圈逛街與晚餐",
+    category: "自由活動",
+    locationName: "新宿商圈",
+    address: "東京都新宿區",
+    googleMapUrl: "https://www.google.com/maps/search/?api=1&query=Shinjuku+Station+Tokyo",
+    transportNote: "從原宿搭乘 JR 山手線至新宿站",
+    reservationStatus: "none",
+    priority: "medium",
+    isFlexible: true,
+    backupPlan: "",
+    note: "新宿站周邊商場（如伊勢丹、Lumine等）逛街，晚餐可在新宿自由選擇喜愛的餐廳。"
+  },
+  {
+    id: "iti-12-1",
     date: "2026-06-26",
     dayLabel: "Day 5",
     startTime: "10:00",
-    endTime: "21:00",
-    area: "新宿 / 東京鐵塔",
-    title: "彈性自由日 (新宿/東京鐵塔)",
-    category: "自由活動",
-    locationName: "東京鐵塔, 鶏繁燒鳥晚餐",
-    address: "",
-    googleMapUrl: "",
-    transportNote: "市區地鐵",
+    endTime: "13:30",
+    area: "東京站",
+    title: "東京車站與車站地下街購物",
+    category: "購物",
+    locationName: "東京車站一番街 / KITTE",
+    address: "東京都千代田區丸之內 1 丁目",
+    googleMapUrl: "https://www.google.com/maps/search/?api=1&query=Tokyo+Station+Character+Street",
+    transportNote: "搭乘地鐵或 JR 移動",
     reservationStatus: "none",
-    priority: "low",
+    priority: "medium",
     isFlexible: true,
-    backupPlan: "若想逛銀座也可以在此日安排",
-    note: "晚餐備選為鶏繁燒鳥，可依當天逛街疲憊程度調整"
+    backupPlan: "",
+    note: "東京車站一番街動漫街、拉麵街逛街，午餐可在拉麵街或 KITTE 丸之內大樓吃根室花まる。"
+  },
+  {
+    id: "iti-12-2",
+    date: "2026-06-26",
+    dayLabel: "Day 5",
+    startTime: "14:00",
+    endTime: "16:30",
+    area: "松濱町",
+    title: "東京鐵塔觀光與拍照",
+    category: "景點",
+    locationName: "東京鐵塔",
+    address: "東京都港區芝公園 4-2-8",
+    googleMapUrl: "https://www.google.com/maps/search/?api=1&query=Tokyo+Tower",
+    transportNote: "從東京站搭乘 JR 山手線至濱松町站，或地鐵至赤羽橋站，步行前進",
+    reservationStatus: "none",
+    priority: "medium",
+    isFlexible: true,
+    backupPlan: "",
+    note: "東京地標東京鐵塔，可在周邊芝公園、赤羽橋站路口或豆腐屋樓梯等熱門角度拍照留念。"
+  },
+  {
+    id: "iti-12-3",
+    date: "2026-06-26",
+    dayLabel: "Day 5",
+    startTime: "17:00",
+    endTime: "21:30",
+    area: "銀座",
+    title: "銀座逛街與鷄繁燒鳥晚餐",
+    category: "自由活動",
+    locationName: "銀座商圈 / 鷄繁",
+    address: "東京都中央區銀座",
+    googleMapUrl: "https://www.google.com/maps/search/?api=1&query=Torishige+Shinbashi+Tokyo",
+    transportNote: "從東京鐵塔周邊地鐵站搭至銀座站或新橋站",
+    reservationStatus: "none",
+    priority: "medium",
+    isFlexible: true,
+    backupPlan: "",
+    note: "銀座高級百貨與精品店逛街，晚餐備選新橋站附近的鷄繁燒鳥（Torishige 新橋本店，JR 新橋站步行3分鐘）。"
   },
   {
     id: "iti-13",
@@ -668,7 +744,7 @@ const DEFAULT_TODOS = [
   { id: "todo-3", title: "購買回程 Skyliner (京成上野 → 成田) 票券或確認購票金額", category: "交通", priority: "high", ownerId: "u-1", status: "done", dueDate: "2026-06-25", note: "已購買並出票完成，費用已併入去程套票中" },
   { id: "todo-4", title: "訂購 Shibuya Sky 門票 (搶購 6/23 18:00 黃昏時段)", category: "景點", priority: "medium", ownerId: "u-1", status: "open", dueDate: "2026-06-01", note: "日本時間 6/1 00:00 (台灣 5/31 23:00) 開搶，莊負責上官網訂購" },
   { id: "todo-5", title: "確認同行 5 人中文姓名與護照代號 (分帳與票券預訂必備)", category: "其他", priority: "high", ownerId: "u-1", status: "done", dueDate: "2026-05-10", note: "已補齊 5 人代號：莊、陳、包、賴、李" },
-  { id: "todo-6", title: "確認 6/26 彈性日的新宿、東京鐵塔或銀座行程內容與餐廳", category: "景點", priority: "medium", ownerId: "u-2", status: "open", dueDate: "2026-06-20", note: "討論此日要安排逛哪裡，晚餐預計吃鶏繁，是否需訂位待確認" },
+  { id: "todo-6", title: "確認 6/26 彈性日的新宿、東京鐵塔或銀座行程內容與餐廳", category: "景點", priority: "medium", ownerId: "u-2", status: "done", dueDate: "2026-06-20", note: "行程已確定：東京車站地下街、東京鐵塔、銀座與新橋鷄繁晚餐。" },
   { id: "todo-7", title: "調查 6/27 退房後上野車站寄放行李之置物櫃位置與備選點", category: "住宿", priority: "medium", ownerId: "u-3", status: "open", dueDate: "2026-06-20", note: "上野站置物櫃容易客滿，包需上網搜尋是否有其他行李寄放服務 (如 Ecbo Cloak)" }
 ];
 
@@ -722,6 +798,34 @@ function loadState() {
         const exp8Index = parsed.expenses.findIndex(e => e.id === "exp-8");
         if (exp8Index !== -1) {
           parsed.expenses.splice(exp8Index, 1);
+          isModified = true;
+        }
+
+        // Mark todo-6 as done since the itinerary is finalized
+        const todo6 = parsed.todos.find(t => t.id === "todo-6");
+        if (todo6 && todo6.status !== "done") {
+          todo6.status = "done";
+          todo6.note = "行程已確定：東京車站地下街、東京鐵塔、銀座與新橋鷄繁晚餐。";
+          isModified = true;
+        }
+
+        // Migrate itineraries for June 25-26 changes
+        if (!parsed.itineraryVersion || parsed.itineraryVersion !== "v3") {
+          // Remove old iti-11 and iti-12
+          parsed.itineraries = parsed.itineraries.filter(i => i.id !== "iti-11" && i.id !== "iti-12");
+          
+          // Check if the new items already exist to avoid duplicate adding
+          const newIds = ["iti-11-1", "iti-11-2", "iti-11-3", "iti-12-1", "iti-12-2", "iti-12-3"];
+          newIds.forEach(nid => {
+            if (!parsed.itineraries.some(i => i.id === nid)) {
+              const newIti = DEFAULT_ITINERARIES.find(i => i.id === nid);
+              if (newIti) {
+                parsed.itineraries.push(newIti);
+              }
+            }
+          });
+          
+          parsed.itineraryVersion = "v3";
           isModified = true;
         }
 
