@@ -157,18 +157,10 @@
                 <i data-lucide="pie-chart" class="text-warning"></i>
                 <h3>支出摘要</h3>
               </div>
-              <div class="finance-summary-grid">
-                <div class="fin-stat">
-                  <span class="fin-label">總支出 (TWD)</span>
-                  <span class="fin-value" id="dash-total-twd">NT$ 0</span>
-                </div>
-                <div class="fin-stat">
-                  <span class="fin-label">總支出 (JPY)</span>
-                  <span class="fin-value" id="dash-total-jpy">¥ 0</span>
-                </div>
-                <div class="fin-stat full-width">
-                  <span class="fin-label">未結清筆數</span>
-                  <span class="fin-value text-danger" id="dash-unsettled-count">0 筆</span>
+              <div class="finance-summary-grid" style="display: block; margin-bottom: 16px;">
+                <div class="fin-stat" style="align-items: center; padding: 16px;">
+                  <span class="fin-label">個人均花費 (台幣折算)</span>
+                  <span class="fin-value" id="dash-total-twd" style="font-size: 1.8rem; font-weight: 700; margin-top: 6px;">NT$ 0</span>
                 </div>
               </div>
               <div class="card-actions">
@@ -315,6 +307,14 @@
               <h2 class="page-title">吃與喝</h2>
               <p class="page-desc">已訂位餐廳與各區備選美味清單</p>
             </div>
+            <div class="header-buttons" style="display: flex; gap: 8px;">
+              <button class="app-btn btn-primary" id="btn-add-booked-food">
+                <i data-lucide="plus"></i> 新增已預約餐廳
+              </button>
+              <button class="app-btn btn-secondary" id="btn-add-backup-food">
+                <i data-lucide="plus"></i> 新增備選餐廳
+              </button>
+            </div>
           </div>
 
           <div class="tabs-sub-header">
@@ -349,6 +349,11 @@
             <div>
               <h2 class="page-title">景點與商店</h2>
               <p class="page-desc">規劃前往的景點、神社、博物館與潮流服飾、動漫模型購物點</p>
+            </div>
+            <div class="header-buttons">
+              <button class="app-btn btn-primary" id="btn-add-place">
+                <i data-lucide="plus"></i> 新增景點
+              </button>
             </div>
           </div>
 
@@ -1141,6 +1146,192 @@
 
         <div class="form-actions">
           <button type="button" class="app-btn btn-ghost" id="btn-cancel-transport">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存項目</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Place Form -->
+  <div class="modal" id="modal-place">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="place-modal-title">新增景點項目</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-place" class="modal-form">
+        <input type="hidden" id="place-id-input">
+
+        <div class="form-group">
+          <label for="pl-modal-name">景點/商店名稱 <span class="required">*</span></label>
+          <input type="text" id="pl-modal-name" placeholder="例如: SHIBUYA SKY、淺草寺..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pl-modal-area">地區 <span class="required">*</span></label>
+            <input type="text" id="pl-modal-area" placeholder="例如: 澀谷、淺草、河口湖..." required>
+          </div>
+          <div class="form-group">
+            <label for="pl-modal-category">分類 <span class="required">*</span></label>
+            <select id="pl-modal-category" required>
+              <option value="景點">景點</option>
+              <option value="拍照點">拍照點</option>
+              <option value="神社">神社</option>
+              <option value="博物館">博物館</option>
+              <option value="商店">商店</option>
+              <option value="百貨">百貨</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pl-modal-date">預計日期</label>
+            <input type="date" id="pl-modal-date">
+          </div>
+          <div class="form-group">
+            <label for="pl-modal-hours">營業時間</label>
+            <input type="text" id="pl-modal-hours" placeholder="例如: 10:00-22:30">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pl-modal-station">最近車站</label>
+            <input type="text" id="pl-modal-station" placeholder="例如: 澀谷站">
+          </div>
+          <div class="form-group">
+            <label for="pl-modal-walking">步行時間</label>
+            <input type="text" id="pl-modal-walking" placeholder="例如: 直通、步行 5 分鐘">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pl-modal-ticket">是否需門票</label>
+            <select id="pl-modal-ticket">
+              <option value="false">否</option>
+              <option value="true">是</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="pl-modal-reservation">是否需預約</label>
+            <select id="pl-modal-reservation">
+              <option value="false">否</option>
+              <option value="true">是</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="pl-modal-mapurl">Google Maps 連結</label>
+          <input type="url" id="pl-modal-mapurl" placeholder="https://maps.google.com/...">
+        </div>
+
+        <div class="form-group">
+          <label for="pl-modal-note">提醒備註</label>
+          <textarea id="pl-modal-note" rows="2" placeholder="記下門票訂購時間、注意事項、周邊推薦等..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-place">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存項目</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Food Form -->
+  <div class="modal" id="modal-food">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="food-modal-title">新增餐廳項目</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-food" class="modal-form">
+        <input type="hidden" id="food-id-input">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fd-modal-name-en">餐廳英文/拼音名稱 <span class="required">*</span></label>
+            <input type="text" id="fd-modal-name-en" placeholder="例如: Yoroniku Aoyama、Mutekiya..." required>
+          </div>
+          <div class="form-group">
+            <label for="fd-modal-name-jp">日文名稱</label>
+            <input type="text" id="fd-modal-name-jp" placeholder="例如: よろにく 青山店、無敵家...">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fd-modal-area">地區 <span class="required">*</span></label>
+            <input type="text" id="fd-modal-area" placeholder="例如: 表參道、池袋、上野..." required>
+          </div>
+          <div class="form-group">
+            <label for="fd-modal-category">分類 <span class="required">*</span></label>
+            <input type="text" id="fd-modal-category" placeholder="例如: 燒肉、拉麵、定食、咖啡..." required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fd-modal-station">最近車站</label>
+            <input type="text" id="fd-modal-station" placeholder="例如: 表參道站 B1 出口">
+          </div>
+          <div class="form-group">
+            <label for="fd-modal-walking">步行時間</label>
+            <input type="text" id="fd-modal-walking" placeholder="例如: 步行 10 分鐘">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fd-modal-resv-status">預約狀態 <span class="required">*</span></label>
+            <select id="fd-modal-resv-status" required>
+              <option value="none">無需預約 / 備選 (none)</option>
+              <option value="confirmed">已確認訂位 (confirmed)</option>
+              <option value="pending">待確認 (pending)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fd-modal-budget">每人預算 (JPY)</label>
+            <input type="number" id="fd-modal-budget" min="0" placeholder="例如: 12000">
+          </div>
+        </div>
+
+        <!-- Section: Booked fields (hidden by default, toggled via JS) -->
+        <div id="fd-modal-booked-fields" class="hidden">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fd-modal-resv-time">預約時間</label>
+              <input type="datetime-local" id="fd-modal-resv-time">
+            </div>
+            <div class="form-group">
+              <label for="fd-modal-resv-no">訂位確認代號</label>
+              <input type="text" id="fd-modal-resv-no" placeholder="例如: 7ALS33NU4D">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="fd-modal-people">用餐人數</label>
+            <input type="number" id="fd-modal-people" min="1" placeholder="例如: 5">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fd-modal-mapurl">Google Maps 連結</label>
+          <input type="url" id="fd-modal-mapurl" placeholder="https://maps.google.com/...">
+        </div>
+
+        <div class="form-group">
+          <label for="fd-modal-note">備註說明</label>
+          <textarea id="fd-modal-note" rows="2" placeholder="記下低消限制、特別注意事項或代墊預訂費等細節..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-food">取消</button>
           <button type="submit" class="app-btn btn-primary">儲存項目</button>
         </div>
       </form>

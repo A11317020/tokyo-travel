@@ -1091,33 +1091,33 @@ function renderDashboard() {
 }
 
 function calculateFinanceTotals() {
-  let twdTotal = 0;
-  let jpyTotal = 0;
-  let unsettledCount = 0;
+  let sharedTwd = 0;
+  let sharedJpy = 0;
+  let personalTwd = 0;
+  let personalJpy = 0;
 
   APP_STATE.expenses.forEach(exp => {
-    if (exp.currency === "TWD") {
-      twdTotal += Number(exp.amount) || 0;
-    } else if (exp.currency === "JPY") {
-      jpyTotal += Number(exp.amount) || 0;
-    }
+    const amt = Number(exp.amount) || 0;
+    const isShared = exp.splitType !== "personal";
 
-    if (exp.settlementStatus !== "settled") {
-      unsettledCount++;
+    if (exp.currency === "TWD") {
+      if (isShared) sharedTwd += amt;
+      else personalTwd += amt;
+    } else if (exp.currency === "JPY") {
+      if (isShared) sharedJpy += amt;
+      else personalJpy += amt;
     }
   });
 
-  // Calculate currency conversion and combined total
   const rate = APP_STATE.exchangeRate || 0.21;
-  const combinedTwd = twdTotal + (jpyTotal * rate);
+  const avgSharedTwd = sharedTwd / 5;
+  const avgSharedJpy = sharedJpy / 5;
+
+  const combinedPersonalTwd = personalTwd + (personalJpy * rate) + avgSharedTwd;
 
   const dashTwd = document.getElementById("dash-total-twd");
-  const dashJpy = document.getElementById("dash-total-jpy");
-  const dashUnsettled = document.getElementById("dash-unsettled-count");
 
-  if (dashTwd) dashTwd.textContent = `NT$ ${Math.round(combinedTwd).toLocaleString()}`;
-  if (dashJpy) dashJpy.textContent = `¥ ${jpyTotal.toLocaleString()}`;
-  if (dashUnsettled) dashUnsettled.textContent = `${unsettledCount} 筆`;
+  if (dashTwd) dashTwd.textContent = `NT$ ${Math.round(combinedPersonalTwd).toLocaleString()}`;
 }
 
 // --------------------------------------------------------------------------
@@ -2117,12 +2117,18 @@ function renderFood() {
         <div><strong>重要備註:</strong> ${f.note || "無"}</div>
       </div>
 
-      <div class="food-card-actions">
+      <div class="food-card-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
         <a href="${f.googleMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((f.nameJp || f.nameEn) + ' Tokyo')}`}" target="_blank" class="app-btn btn-secondary btn-sm">
           <i data-lucide="map"></i> 開啟地圖
         </a>
         <button class="app-btn btn-secondary btn-sm" onclick="openExpenseFormForFood('${f.nameEn}', ${f.estimatedBudget || 0})">
           <i data-lucide="wallet"></i> 記錄此筆支出
+        </button>
+        <button class="app-btn btn-secondary btn-sm btn-edit-food" data-id="${f.id}">
+          <i data-lucide="edit-2"></i> 編輯
+        </button>
+        <button class="app-btn btn-danger btn-sm btn-delete-food" data-id="${f.id}">
+          <i data-lucide="trash"></i> 刪除
         </button>
       </div>
     `;
@@ -2156,10 +2162,16 @@ function renderFood() {
         <div><strong>備註:</strong> ${f.note || "無"}</div>
       </div>
 
-      <div class="food-card-actions">
+      <div class="food-card-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
         <a href="${f.googleMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((f.nameJp || f.nameEn) + ' Tokyo')}`}" target="_blank" class="app-btn btn-secondary btn-sm">
           <i data-lucide="map"></i> 開啟地圖
         </a>
+        <button class="app-btn btn-secondary btn-sm btn-edit-food" data-id="${f.id}">
+          <i data-lucide="edit-2"></i> 編輯
+        </button>
+        <button class="app-btn btn-danger btn-sm btn-delete-food" data-id="${f.id}">
+          <i data-lucide="trash"></i> 刪除
+        </button>
       </div>
     `;
     backupContainer.appendChild(card);
@@ -2168,6 +2180,21 @@ function renderFood() {
   if (backupItems.length === 0) {
     backupContainer.innerHTML = `<div class="empty-state-text" style="color:var(--text-muted); padding:12px;">此篩選條件下無備選餐廳。</div>`;
   }
+
+  // Attach edit & delete click handlers for food
+  document.querySelectorAll(".btn-edit-food").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      openFoodModal(id);
+    };
+  });
+
+  document.querySelectorAll(".btn-delete-food").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      deleteFood(id);
+    };
+  });
 }
 
 function openExpenseFormForFood(foodName, estimatedJpy) {
@@ -2179,6 +2206,136 @@ function openExpenseFormForFood(foodName, estimatedJpy) {
   if (estimatedJpy > 0) {
     // Fill total budget
     document.getElementById("exp-amount").value = estimatedJpy * 5; 
+  }
+}
+
+function openFoodModal(id, defaultStatus = 'none') {
+  closeAllModals();
+  const modal = document.getElementById("modal-food");
+  if (!modal) return;
+  modal.classList.add("active");
+
+  const form = document.getElementById("form-food");
+  form.reset();
+
+  const titleNode = document.getElementById("food-modal-title");
+  const idInput = document.getElementById("food-id-input");
+
+  if (id) {
+    titleNode.textContent = "編輯餐廳項目";
+    idInput.value = id;
+
+    const f = APP_STATE.foods.find(item => item.id === id);
+    if (f) {
+      document.getElementById("fd-modal-name-en").value = f.nameEn;
+      document.getElementById("fd-modal-name-jp").value = f.nameJp || "";
+      document.getElementById("fd-modal-area").value = f.area;
+      document.getElementById("fd-modal-category").value = f.category;
+      document.getElementById("fd-modal-station").value = f.nearestStation || "";
+      document.getElementById("fd-modal-walking").value = f.walkingTime || "";
+      document.getElementById("fd-modal-resv-status").value = f.reservationStatus || "none";
+      document.getElementById("fd-modal-budget").value = f.estimatedBudget || "";
+      document.getElementById("fd-modal-mapurl").value = f.googleMapUrl || "";
+      document.getElementById("fd-modal-note").value = f.note || "";
+      
+      if (f.reservationTime) {
+        const dateVal = f.reservationTime.substring(0, 16);
+        document.getElementById("fd-modal-resv-time").value = dateVal;
+      } else {
+        document.getElementById("fd-modal-resv-time").value = "";
+      }
+      
+      document.getElementById("fd-modal-resv-no").value = f.reservationNumber || "";
+      document.getElementById("fd-modal-people").value = f.peopleCount || "";
+    }
+  } else {
+    titleNode.textContent = defaultStatus === 'confirmed' ? "新增已預約餐廳" : "新增備選餐廳";
+    idInput.value = "";
+    document.getElementById("fd-modal-resv-status").value = defaultStatus;
+  }
+  
+  toggleFoodResvFieldsVisibility();
+}
+
+function onFoodFormSubmit(evt) {
+  evt.preventDefault();
+
+  const id = document.getElementById("food-id-input").value;
+  const nameEn = document.getElementById("fd-modal-name-en").value;
+  const nameJp = document.getElementById("fd-modal-name-jp").value;
+  const area = document.getElementById("fd-modal-area").value;
+  const category = document.getElementById("fd-modal-category").value;
+  const nearestStation = document.getElementById("fd-modal-station").value;
+  const walkingTime = document.getElementById("fd-modal-walking").value;
+  const reservationStatus = document.getElementById("fd-modal-resv-status").value;
+  const estimatedBudget = Number(document.getElementById("fd-modal-budget").value) || undefined;
+  const googleMapUrl = document.getElementById("fd-modal-mapurl").value;
+  const note = document.getElementById("fd-modal-note").value;
+
+  let reservationTime = undefined;
+  let reservationNumber = undefined;
+  let peopleCount = undefined;
+  
+  if (reservationStatus === "confirmed" || reservationStatus === "pending") {
+    const rawTime = document.getElementById("fd-modal-resv-time").value;
+    if (rawTime) {
+      reservationTime = rawTime;
+    }
+    reservationNumber = document.getElementById("fd-modal-resv-no").value || undefined;
+    peopleCount = Number(document.getElementById("fd-modal-people").value) || undefined;
+  }
+
+  const foodItem = {
+    id: id || `f-${Date.now()}`,
+    nameEn,
+    nameJp,
+    area,
+    category,
+    nearestStation,
+    walkingTime,
+    reservationRequired: reservationStatus !== "none",
+    reservationStatus,
+    reservationTime,
+    reservationNumber,
+    peopleCount,
+    estimatedBudget,
+    googleMapUrl,
+    note
+  };
+
+  if (id) {
+    const idx = APP_STATE.foods.findIndex(item => item.id === id);
+    if (idx !== -1) APP_STATE.foods[idx] = foodItem;
+  } else {
+    APP_STATE.foods.push(foodItem);
+  }
+
+  saveState(APP_STATE);
+  closeAllModals();
+  renderFood();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function deleteFood(id) {
+  const f = APP_STATE.foods.find(item => item.id === id);
+  if (!f) return;
+
+  if (confirm(`確定要刪除餐廳「${f.nameEn}」嗎？`)) {
+    APP_STATE.foods = APP_STATE.foods.filter(item => item.id !== id);
+    saveState(APP_STATE);
+    renderFood();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function toggleFoodResvFieldsVisibility() {
+  const status = document.getElementById("fd-modal-resv-status").value;
+  const bookedFields = document.getElementById("fd-modal-booked-fields");
+  
+  if (status === "confirmed" || status === "pending") {
+    bookedFields.classList.remove("hidden");
+  } else {
+    bookedFields.classList.add("hidden");
   }
 }
 
@@ -2262,14 +2419,35 @@ function renderPlaces() {
         <div style="margin-top:6px;"><strong>提醒備註:</strong> ${p.note || "無"}</div>
       </div>
 
-      <div class="place-card-actions">
+      <div class="place-card-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
         <a href="${p.googleMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' Tokyo')}`}" target="_blank" class="app-btn btn-secondary btn-sm">
           <i data-lucide="map"></i> 開啟地圖
         </a>
+        <button class="app-btn btn-secondary btn-sm btn-edit-place" data-id="${p.id}">
+          <i data-lucide="edit-2"></i> 編輯
+        </button>
+        <button class="app-btn btn-danger btn-sm btn-delete-place" data-id="${p.id}">
+          <i data-lucide="trash"></i> 刪除
+        </button>
       </div>
     `;
 
     container.appendChild(card);
+  });
+
+  // Attach edit & delete click handlers
+  container.querySelectorAll(".btn-edit-place").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      openPlaceModal(id);
+    };
+  });
+
+  container.querySelectorAll(".btn-delete-place").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      deletePlace(id);
+    };
   });
 
   if (list.length === 0) {
@@ -2280,6 +2458,102 @@ function renderPlaces() {
         <p class="empty-state-desc">你可以嘗試更換篩選條件。</p>
       </div>
     `;
+  }
+}
+
+function openPlaceModal(id) {
+  closeAllModals();
+  const modal = document.getElementById("modal-place");
+  if (!modal) return;
+  modal.classList.add("active");
+
+  const form = document.getElementById("form-place");
+  form.reset();
+
+  const titleNode = document.getElementById("place-modal-title");
+  const idInput = document.getElementById("place-id-input");
+
+  if (id) {
+    titleNode.textContent = "編輯景點項目";
+    idInput.value = id;
+
+    const p = APP_STATE.places.find(item => item.id === id);
+    if (p) {
+      document.getElementById("pl-modal-name").value = p.name;
+      document.getElementById("pl-modal-area").value = p.area;
+      document.getElementById("pl-modal-category").value = p.category;
+      document.getElementById("pl-modal-date").value = p.plannedDate || "";
+      document.getElementById("pl-modal-hours").value = p.openingHours || "";
+      document.getElementById("pl-modal-station").value = p.nearestStation || "";
+      document.getElementById("pl-modal-walking").value = p.walkingTime || "";
+      document.getElementById("pl-modal-ticket").value = String(p.ticketRequired || false);
+      document.getElementById("pl-modal-reservation").value = String(p.reservationRequired || false);
+      document.getElementById("pl-modal-mapurl").value = p.googleMapUrl || "";
+      document.getElementById("pl-modal-note").value = p.note || "";
+    }
+  } else {
+    titleNode.textContent = "新增景點項目";
+    idInput.value = "";
+    document.getElementById("pl-modal-category").value = "景點";
+    document.getElementById("pl-modal-date").value = "2026-06-22"; // Start of Tokyo trip
+    document.getElementById("pl-modal-ticket").value = "false";
+    document.getElementById("pl-modal-reservation").value = "false";
+  }
+}
+
+function onPlaceFormSubmit(evt) {
+  evt.preventDefault();
+
+  const id = document.getElementById("place-id-input").value;
+  const name = document.getElementById("pl-modal-name").value;
+  const area = document.getElementById("pl-modal-area").value;
+  const category = document.getElementById("pl-modal-category").value;
+  const plannedDate = document.getElementById("pl-modal-date").value;
+  const openingHours = document.getElementById("pl-modal-hours").value;
+  const nearestStation = document.getElementById("pl-modal-station").value;
+  const walkingTime = document.getElementById("pl-modal-walking").value;
+  const ticketRequired = document.getElementById("pl-modal-ticket").value === "true";
+  const reservationRequired = document.getElementById("pl-modal-reservation").value === "true";
+  const googleMapUrl = document.getElementById("pl-modal-mapurl").value;
+  const note = document.getElementById("pl-modal-note").value;
+
+  const placeItem = {
+    id: id || `p-${Date.now()}`,
+    name,
+    area,
+    category,
+    plannedDate: plannedDate || undefined,
+    openingHours,
+    nearestStation,
+    walkingTime,
+    ticketRequired,
+    reservationRequired,
+    googleMapUrl,
+    note
+  };
+
+  if (id) {
+    const idx = APP_STATE.places.findIndex(item => item.id === id);
+    if (idx !== -1) APP_STATE.places[idx] = placeItem;
+  } else {
+    APP_STATE.places.push(placeItem);
+  }
+
+  saveState(APP_STATE);
+  closeAllModals();
+  renderPlaces();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function deletePlace(id) {
+  const p = APP_STATE.places.find(item => item.id === id);
+  if (!p) return;
+
+  if (confirm(`確定要刪除景點「${p.name}」嗎？`)) {
+    APP_STATE.places = APP_STATE.places.filter(item => item.id !== id);
+    saveState(APP_STATE);
+    renderPlaces();
+    if (window.lucide) window.lucide.createIcons();
   }
 }
 
@@ -3017,6 +3291,13 @@ function initFormControllers() {
     toggleSplitInputsVisibility();
   });
 
+  const resvStatusSelect = document.getElementById("fd-modal-resv-status");
+  if (resvStatusSelect) {
+    resvStatusSelect.addEventListener("change", () => {
+      toggleFoodResvFieldsVisibility();
+    });
+  }
+
   // Modal Closers
   document.querySelectorAll(".close-modal-btn, .btn-ghost").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -3031,6 +3312,8 @@ function initFormControllers() {
   document.getElementById("form-ticket").onsubmit = onTicketFormSubmit;
   document.getElementById("form-transport").onsubmit = onTransportFormSubmit;
   document.getElementById("form-accommodation").onsubmit = onAccommodationFormSubmit;
+  document.getElementById("form-place").onsubmit = onPlaceFormSubmit;
+  document.getElementById("form-food").onsubmit = onFoodFormSubmit;
 
   // Add Item Openers
   document.getElementById("btn-add-expense").onclick = () => openExpenseModal(null);
@@ -3052,6 +3335,21 @@ function initFormControllers() {
     addAccBtn.onclick = () => openAccommodationModal(null);
   }
 
+  const addPlBtn = document.getElementById("btn-add-place");
+  if (addPlBtn) {
+    addPlBtn.onclick = () => openPlaceModal(null);
+  }
+
+  const addBookedFdBtn = document.getElementById("btn-add-booked-food");
+  if (addBookedFdBtn) {
+    addBookedFdBtn.onclick = () => openFoodModal(null, 'confirmed');
+  }
+
+  const addBackupFdBtn = document.getElementById("btn-add-backup-food");
+  if (addBackupFdBtn) {
+    addBackupFdBtn.onclick = () => openFoodModal(null, 'none');
+  }
+
   // Form Cancels
   const cancelTkBtn = document.getElementById("btn-cancel-ticket");
   if (cancelTkBtn) {
@@ -3066,6 +3364,16 @@ function initFormControllers() {
   const cancelAccBtn = document.getElementById("btn-cancel-accommodation");
   if (cancelAccBtn) {
     cancelAccBtn.onclick = () => closeAllModals();
+  }
+
+  const cancelPlBtn = document.getElementById("btn-cancel-place");
+  if (cancelPlBtn) {
+    cancelPlBtn.onclick = () => closeAllModals();
+  }
+
+  const cancelFdBtn = document.getElementById("btn-cancel-food");
+  if (cancelFdBtn) {
+    cancelFdBtn.onclick = () => closeAllModals();
   }
 
   // Auto per-person cost calculation for accommodation form
