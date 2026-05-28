@@ -1,0 +1,17 @@
+{
+  "name": "jpt-travel-system",
+  "version": "1.0.0",
+  "description": "日本東京行旅遊管理系統 MVP",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

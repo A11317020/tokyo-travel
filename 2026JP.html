@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>東京行旅遊管理系統</title>
+  <meta name="description" content="多人日本東京行旅遊管理系統，整合行程、交通、住宿、餐飲、支出與分帳統計。">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- App Container -->
+  <div class="app-layout">
+    
+    <!-- Desktop Sidebar Navigation -->
+    <aside class="sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <i data-lucide="compass" class="brand-icon"></i>
+          <div>
+            <h1 class="brand-title">東京行 2026</h1>
+            <p class="brand-subtitle">Tokyo Travel</p>
+          </div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="dashboard" id="btn-side-dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>總覽首頁</span>
+        </button>
+        <button class="nav-item" data-view="itinerary" id="btn-side-itinerary">
+          <i data-lucide="calendar"></i>
+          <span>每日行程</span>
+        </button>
+        <button class="nav-item" data-view="accommodations" id="btn-side-accommodations">
+          <i data-lucide="hotel"></i>
+          <span>住宿資訊</span>
+        </button>
+        <button class="nav-item" data-view="transport" id="btn-side-transport">
+          <i data-lucide="train"></i>
+          <span>交通票券</span>
+        </button>
+        <button class="nav-item" data-view="food" id="btn-side-food">
+          <i data-lucide="utensils"></i>
+          <span>吃與喝</span>
+        </button>
+        <button class="nav-item" data-view="places" id="btn-side-places">
+          <i data-lucide="map-pin"></i>
+          <span>景點商店</span>
+        </button>
+        <button class="nav-item" data-view="expenses" id="btn-side-expenses">
+          <i data-lucide="wallet"></i>
+          <span>支出記錄</span>
+        </button>
+        <button class="nav-item" data-view="settlements" id="btn-side-settlements">
+          <i data-lucide="coins"></i>
+          <span>分帳結算</span>
+        </button>
+        <button class="nav-item" data-view="todos" id="btn-side-todos">
+          <i data-lucide="check-square"></i>
+          <span>待補清單</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="theme-toggle-btn" id="theme-toggle-desktop" aria-label="切換主題">
+          <i data-lucide="sun" class="sun-icon"></i>
+          <i data-lucide="moon" class="moon-icon"></i>
+          <span class="theme-label">切換深色模式</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Mobile Header -->
+      <header class="mobile-header">
+        <div class="brand">
+          <i data-lucide="compass" class="brand-icon"></i>
+          <h1 class="brand-title">東京行 2026</h1>
+        </div>
+        <button class="theme-toggle-btn icon-only" id="theme-toggle-mobile" aria-label="切換主題">
+          <i data-lucide="sun" class="sun-icon"></i>
+          <i data-lucide="moon" class="moon-icon"></i>
+        </button>
+      </header>
+
+      <!-- View Containers -->
+      <div class="view-viewport">
+        
+        <!-- View: Dashboard -->
+        <section class="view-panel active" id="view-dashboard">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">旅遊總覽</h2>
+              <p class="page-desc">2026/06/22（一）～ 2026/06/28（日）</p>
+            </div>
+          </div>
+          
+          <div class="dashboard-grid">
+            <!-- Today's Highlight -->
+            <div class="dashboard-card highlight-card">
+              <div class="card-tag">今日行程</div>
+              <div id="dash-today-meta" class="dash-meta-text">讀取中...</div>
+              <h3 id="dash-today-title" class="dash-highlight-title">讀取中...</h3>
+              <p id="dash-today-desc" class="dash-highlight-desc">載入今日行程資訊...</p>
+              <div id="dash-today-details" class="dash-highlight-details"></div>
+            </div>
+
+            <!-- Next High-Priority Notice / Reminder -->
+            <div class="dashboard-card reminder-card">
+              <div class="card-header-with-icon">
+                <i data-lucide="alert-circle" class="text-danger"></i>
+                <h3>重要提醒與下一步</h3>
+              </div>
+              <div class="reminder-content-box">
+                <div class="reminder-item highlight">
+                  <div class="reminder-time">6/28 14:50 前</div>
+                  <div class="reminder-text">需抵達成田機場（17:40 回程航班）</div>
+                </div>
+                <div id="dash-next-step" class="dash-sub-reminder">
+                  <!-- JS inserts next transport or reservation here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Pre-booked Events -->
+            <div class="dashboard-card prebook-card">
+              <div class="card-header-with-icon">
+                <i data-lucide="ticket" class="text-success"></i>
+                <h3>重要預約與門票</h3>
+              </div>
+              <div class="prebook-list" id="dash-prebooks">
+                <!-- JS inserts booked restaurants or places -->
+              </div>
+            </div>
+
+            <!-- Lodging Card -->
+            <div class="dashboard-card lodging-card">
+              <div class="card-header-with-icon">
+                <i data-lucide="home" class="text-info"></i>
+                <h3>今晚住宿</h3>
+              </div>
+              <div id="dash-lodging-box">
+                <!-- JS inserts today's accommodation -->
+              </div>
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="dashboard-card finance-card">
+              <div class="card-header-with-icon">
+                <i data-lucide="pie-chart" class="text-warning"></i>
+                <h3>支出摘要</h3>
+              </div>
+              <div class="finance-summary-grid">
+                <div class="fin-stat">
+                  <span class="fin-label">總支出 (TWD)</span>
+                  <span class="fin-value" id="dash-total-twd">NT$ 0</span>
+                </div>
+                <div class="fin-stat">
+                  <span class="fin-label">總支出 (JPY)</span>
+                  <span class="fin-value" id="dash-total-jpy">¥ 0</span>
+                </div>
+                <div class="fin-stat full-width">
+                  <span class="fin-label">未結清筆數</span>
+                  <span class="fin-value text-danger" id="dash-unsettled-count">0 筆</span>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="app-btn btn-primary btn-sm btn-full" id="dash-go-expenses">
+                  <i data-lucide="plus"></i> 記一筆支出
+                </button>
+              </div>
+            </div>
+
+            <!-- Gaps / Todos Card -->
+            <div class="dashboard-card todos-summary-card">
+              <div class="card-header-with-icon">
+                <i data-lucide="clipboard-list" class="text-muted"></i>
+                <h3>資料缺口與待處理</h3>
+              </div>
+              <div class="todo-summary-box">
+                <div class="todo-summary-stats">
+                  <span id="dash-todo-high-count" class="badge badge-danger">高優先待補: 0</span>
+                  <span id="dash-todo-total-count" class="badge badge-muted">未完成總計: 0</span>
+                </div>
+                <ul class="todo-mini-list" id="dash-todo-mini">
+                  <!-- JS inserts top 3 high priority todos -->
+                </ul>
+              </div>
+              <div class="card-actions">
+                <button class="app-btn btn-secondary btn-sm btn-full" id="dash-go-todos">查看待補清單</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- View: Itinerary -->
+        <section class="view-panel" id="view-itinerary">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">每日行程表</h2>
+              <p class="page-desc">切換日期以查看當日時間軸與行程內容</p>
+            </div>
+            <button class="app-btn btn-primary" id="btn-add-itinerary">
+              <i data-lucide="plus"></i> 新增行程
+            </button>
+          </div>
+
+          <!-- Date Tabs -->
+          <div class="date-tabs-container">
+            <div class="date-tabs" id="itinerary-date-tabs">
+              <!-- JS generates Date tabs -->
+            </div>
+          </div>
+
+          <div class="itinerary-layout">
+            <!-- Day Metadata Card -->
+            <div class="day-meta-card" id="itinerary-day-meta">
+              <!-- JS inserts daily overview / weather / special alerts -->
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-container">
+              <div class="timeline-filter">
+                <span class="filter-label">篩選類型：</span>
+                <div class="filter-options" id="timeline-filters">
+                  <button class="filter-chip active" data-filter="all">全部</button>
+                  <button class="filter-chip" data-filter="交通">交通</button>
+                  <button class="filter-chip" data-filter="餐廳">餐廳</button>
+                  <button class="filter-chip" data-filter="景點">景點</button>
+                  <button class="filter-chip" data-filter="購物">購物</button>
+                  <button class="filter-chip" data-filter="住宿">住宿</button>
+                  <button class="filter-chip" data-filter="自由活動">自由活動</button>
+                </div>
+              </div>
+              
+              <div class="timeline-list" id="itinerary-timeline">
+                <!-- JS inserts timeline cards here -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- View: Accommodations -->
+        <section class="view-panel" id="view-accommodations">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">住宿資訊</h2>
+              <p class="page-desc">本次行程分為兩段住宿，請注意 6/27 退房換宿安排</p>
+            </div>
+          </div>
+
+          <!-- Stay warning -->
+          <div class="app-alert alert-warning">
+            <i data-lucide="info"></i>
+            <div>
+              <strong>重要換宿提醒：</strong>6/27 早上需自田端民宿退房，行李可先寄存在上野車站，傍晚再前往三之輪站附近入住新旅店。
+            </div>
+          </div>
+
+          <div class="lodging-grid" id="accommodations-list">
+            <!-- JS dynamically inserts lodging cards here -->
+          </div>
+        </section>
+
+        <!-- View: Transport -->
+        <section class="view-panel" id="view-transport">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">交通票券與航班</h2>
+              <p class="page-desc">記錄航班時刻、Skyliner 快線與富士山包車等交通明細</p>
+            </div>
+          </div>
+
+          <div class="transport-grid" id="transport-list">
+            <!-- JS inserts transport cards -->
+          </div>
+        </section>
+
+        <!-- View: Food -->
+        <section class="view-panel" id="view-food">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">吃與喝</h2>
+              <p class="page-desc">已訂位餐廳與各區備選美味清單</p>
+            </div>
+          </div>
+
+          <div class="tabs-sub-header">
+            <div class="filter-group-row">
+              <span class="filter-label">篩選地區：</span>
+              <div class="filter-options" id="food-area-filters">
+                <!-- JS inserts area chips -->
+              </div>
+            </div>
+            <div class="filter-group-row">
+              <span class="filter-label">篩選分類：</span>
+              <div class="filter-options" id="food-category-filters">
+                <!-- JS inserts category chips -->
+              </div>
+            </div>
+          </div>
+
+          <h3 class="section-subtitle">已預約訂位餐廳</h3>
+          <div class="food-booked-grid" id="food-booked-list">
+            <!-- Booked restaurants -->
+          </div>
+
+          <h3 class="section-subtitle">備選餐廳</h3>
+          <div class="food-backup-grid" id="food-backup-list">
+            <!-- Backup restaurants -->
+          </div>
+        </section>
+
+        <!-- View: Places -->
+        <section class="view-panel" id="view-places">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">景點與商店</h2>
+              <p class="page-desc">規劃前往的景點、神社、博物館與潮流服飾、動漫模型購物點</p>
+            </div>
+          </div>
+
+          <div class="tabs-sub-header">
+            <div class="filter-group-row">
+              <span class="filter-label">篩選地區：</span>
+              <div class="filter-options" id="places-area-filters">
+                <!-- JS inserts area filters -->
+              </div>
+            </div>
+            <div class="filter-group-row">
+              <span class="filter-label">篩選分類：</span>
+              <div class="filter-options" id="places-category-filters">
+                <!-- JS inserts category filters -->
+              </div>
+            </div>
+          </div>
+
+          <div class="places-grid" id="places-list">
+            <!-- JS inserts places -->
+          </div>
+        </section>
+
+        <!-- View: Expenses -->
+        <section class="view-panel" id="view-expenses">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">支出記錄</h2>
+              <p class="page-desc">新增旅途中的花費，系統會自動統計每人的代墊與分帳款項</p>
+            </div>
+            <div class="header-buttons">
+              <button class="app-btn btn-secondary" id="btn-export-expenses">
+                <i data-lucide="download"></i> 匯出 CSV
+              </button>
+              <button class="app-btn btn-primary" id="btn-add-expense">
+                <i data-lucide="plus"></i> 新增支出
+              </button>
+            </div>
+          </div>
+
+          <!-- Total summary widgets -->
+          <div class="expense-summary-widgets">
+            <div class="widget-card">
+              <span class="widget-label">總支出 (台幣折算)</span>
+              <h3 class="widget-val" id="exp-total-twd">NT$ 0</h3>
+              <p class="widget-sub" id="exp-total-jpy-meta">日幣: ¥0</p>
+            </div>
+            <div class="widget-card">
+              <span class="widget-label">共同分攤額</span>
+              <h3 class="widget-val" id="exp-total-shared">NT$ 0</h3>
+              <p class="widget-sub" id="exp-shared-jpy-meta">日幣: ¥0</p>
+            </div>
+            <div class="widget-card">
+              <span class="widget-label">個人均花費 (自理+均分公費)</span>
+              <h3 class="widget-val" id="exp-total-personal">NT$ 0</h3>
+              <p class="widget-sub" id="exp-personal-jpy-meta">日幣: ¥0</p>
+            </div>
+            <div class="widget-card config-card">
+              <span class="widget-label">系統匯率設定 (TWD / JPY)</span>
+              <div class="exchange-rate-input-box">
+                <span class="rate-prefix">1 JPY =</span>
+                <input type="number" id="input-exchange-rate" step="0.0001" value="0.21" aria-label="台幣兌日元匯率">
+                <span class="rate-suffix">TWD</span>
+              </div>
+              <p class="widget-sub">未結清筆數：<span id="exp-unsettled-count-val">0</span> 筆</p>
+            </div>
+          </div>
+
+          <!-- Expenses view filters -->
+          <div class="table-actions-row">
+            <div class="search-box-container">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="expense-search-input" placeholder="搜尋項目或付款者..." aria-label="搜尋支出">
+            </div>
+            <div class="filters-row">
+              <select id="expense-filter-payer" aria-label="付款人篩選">
+                <option value="all">付款人：全部</option>
+              </select>
+              <select id="expense-filter-type" aria-label="性質篩選">
+                <option value="all">性質：全部</option>
+                <option value="shared">共同分攤</option>
+                <option value="personal">個人支出</option>
+              </select>
+              <select id="expense-filter-category" aria-label="類別篩選">
+                <option value="all">分類：全部</option>
+                <option value="機票">機票</option>
+                <option value="住宿">住宿</option>
+                <option value="交通">交通</option>
+                <option value="餐飲">餐飲</option>
+                <option value="門票">門票</option>
+                <option value="購物">購物</option>
+                <option value="其他">其他</option>
+              </select>
+              <select id="expense-filter-status" aria-label="結清狀態篩選">
+                <option value="all">狀態：全部</option>
+                <option value="unsettled">未結清</option>
+                <option value="settled">已結清</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Expenses List -->
+          <div class="responsive-table-wrapper">
+            <table class="app-table" id="expenses-table">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>項目</th>
+                  <th>分類</th>
+                  <th class="text-right">金額</th>
+                  <th>幣別</th>
+                  <th>付款者</th>
+                  <th>分攤對象 (分攤方式)</th>
+                  <th>狀態</th>
+                  <th class="text-center">操作</th>
+                </tr>
+              </thead>
+              <tbody id="expenses-tbody">
+                <!-- JS inserts expense rows -->
+              </tbody>
+            </table>
+          </div>
+          
+          <div id="expenses-mobile-cards" class="mobile-cards-list">
+            <!-- JS inserts mobile-optimized expense cards -->
+          </div>
+        </section>
+
+        <!-- View: Settlements -->
+        <section class="view-panel" id="view-settlements">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">分帳結算統計</h2>
+              <p class="page-desc">查看共同支出的平均分攤，以及每人已墊付、應收應付的相抵餘額</p>
+            </div>
+            <button class="app-btn btn-secondary" id="btn-export-settlements">
+              <i data-lucide="download"></i> 匯出結算 CSV
+            </button>
+          </div>
+
+          <!-- Quick statistics grid -->
+          <div class="settlement-stat-cards" id="settlement-users-grid">
+            <!-- JS inserts per-user summary cards -->
+          </div>
+
+          <!-- Settlement transfers / How to pay off -->
+          <div class="settlement-transfer-section">
+            <h3 class="section-subtitle">建議分帳結清方案 (簡化轉帳次數)</h3>
+            <div class="transfer-card">
+              <div id="settlement-transfers-box">
+                <!-- JS inserts pay transfers (e.g. A should pay B NT$ X) -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- View: Todos -->
+        <section class="view-panel" id="view-todos">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">資料缺口與待確認清單</h2>
+              <p class="page-desc">追蹤旅途中尚未確定的飯店地址、包車聯絡方式、景點訂票與行李寄放等細節</p>
+            </div>
+            <button class="app-btn btn-primary" id="btn-add-todo">
+              <i data-lucide="plus"></i> 新增待補項目
+            </button>
+          </div>
+
+          <div class="todo-view-layout">
+            <!-- Todo statistics widget -->
+            <div class="todo-stats-bar">
+              <div class="todo-stat-pill bg-danger-soft">
+                <span class="label">高優先</span>
+                <span class="val" id="todo-stat-high">0</span>
+              </div>
+              <div class="todo-stat-pill bg-warning-soft">
+                <span class="label">中優先</span>
+                <span class="val" id="todo-stat-medium">0</span>
+              </div>
+              <div class="todo-stat-pill bg-muted-soft">
+                <span class="label">低優先</span>
+                <span class="val" id="todo-stat-low">0</span>
+              </div>
+              <div class="todo-stat-pill bg-success-soft">
+                <span class="label">已解決</span>
+                <span class="val" id="todo-stat-done">0</span>
+              </div>
+            </div>
+
+            <!-- Todo board/list -->
+            <div class="todo-list-container">
+              <div class="todo-filter-row">
+                <span class="filter-label">分類篩選：</span>
+                <div class="filter-options" id="todo-cat-filters">
+                  <button class="filter-chip active" data-filter="all">全部</button>
+                  <button class="filter-chip" data-filter="住宿">住宿</button>
+                  <button class="filter-chip" data-filter="交通">交通</button>
+                  <button class="filter-chip" data-filter="餐廳">餐廳</button>
+                  <button class="filter-chip" data-filter="景點">景點</button>
+                  <button class="filter-chip" data-filter="支出">支出</button>
+                  <button class="filter-chip" data-filter="其他">其他</button>
+                </div>
+              </div>
+
+              <div class="todo-list" id="todos-container">
+                <!-- JS inserts todo rows -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Mobile Bottom Navigation -->
+      <nav class="mobile-bottom-nav">
+        <button class="nav-item active" data-view="dashboard" id="btn-mob-dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>首頁</span>
+        </button>
+        <button class="nav-item" data-view="itinerary" id="btn-mob-itinerary">
+          <i data-lucide="calendar"></i>
+          <span>行程</span>
+        </button>
+        <button class="nav-item" data-view="transport" id="btn-mob-transport">
+          <i data-lucide="train"></i>
+          <span>交通</span>
+        </button>
+        <button class="nav-item" data-view="expenses" id="btn-mob-expenses">
+          <i data-lucide="wallet"></i>
+          <span>支出</span>
+        </button>
+        <button class="nav-item" id="btn-mob-more" aria-label="更多選單">
+          <i data-lucide="more-horizontal"></i>
+          <span>更多</span>
+        </button>
+      </nav>
+
+      <!-- Mobile More Menu Bottom Sheet -->
+      <div class="bottom-sheet" id="mobile-more-sheet">
+        <div class="bottom-sheet-backdrop" id="mobile-more-backdrop"></div>
+        <div class="bottom-sheet-content">
+          <div class="bottom-sheet-drag-handle"></div>
+          <div class="bottom-sheet-header">
+            <h3>更多項目</h3>
+            <button class="close-sheet-btn" id="btn-close-more-sheet">&times;</button>
+          </div>
+          <div class="more-menu-grid">
+            <button class="more-menu-item" data-view="accommodations">
+              <i data-lucide="hotel" class="text-info"></i>
+              <span>住宿資訊</span>
+            </button>
+            <button class="more-menu-item" data-view="food">
+              <i data-lucide="utensils" class="text-success"></i>
+              <span>吃與喝</span>
+            </button>
+            <button class="more-menu-item" data-view="places">
+              <i data-lucide="map-pin" class="text-accent"></i>
+              <span>景點商店</span>
+            </button>
+            <button class="more-menu-item" data-view="settlements">
+              <i data-lucide="coins" class="text-warning"></i>
+              <span>分帳結算</span>
+            </button>
+            <button class="more-menu-item" data-view="todos">
+              <i data-lucide="check-square" class="text-danger"></i>
+              <span>待補清單</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Global Modals / Forms -->
+
+  <!-- Modal: Expense Form -->
+  <div class="modal" id="modal-expense">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="expense-modal-title">新增支出項目</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-expense" class="modal-form">
+        <input type="hidden" id="expense-id-input">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="exp-date">日期 <span class="required">*</span></label>
+            <input type="date" id="exp-date" required>
+          </div>
+          <div class="form-group">
+            <label for="exp-category">類別 <span class="required">*</span></label>
+            <select id="exp-category" required>
+              <option value="機票">機票</option>
+              <option value="住宿">住宿</option>
+              <option value="交通">交通</option>
+              <option value="餐飲">餐飲</option>
+              <option value="門票">門票</option>
+              <option value="購物">購物</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="exp-item-name">項目名稱 <span class="required">*</span></label>
+          <input type="text" id="exp-item-name" placeholder="例如: 燒肉晚餐、藥妝採購..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="exp-amount">金額 <span class="required">*</span></label>
+            <input type="number" id="exp-amount" min="0" step="any" placeholder="請輸入數值" required>
+          </div>
+          <div class="form-group">
+            <label for="exp-currency">幣別 <span class="required">*</span></label>
+            <select id="exp-currency" required>
+              <option value="TWD">台幣 (TWD)</option>
+              <option value="JPY">日元 (JPY)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="exp-payer">付款者 <span class="required">*</span></label>
+            <select id="exp-payer" required>
+              <!-- JS populates users options -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="exp-split-type">分攤方式 <span class="required">*</span></label>
+            <select id="exp-split-type" required>
+              <option value="equal">平均分攤 (所有選取人)</option>
+              <option value="personal">個人支出 (僅付款人)</option>
+              <option value="custom">指定分攤 (自訂金額)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Participants Checkboxes -->
+        <div class="form-group" id="participants-selection-box">
+          <label>分攤對象（可複選）</label>
+          <div class="checkbox-group" id="exp-participants-checkboxes">
+            <!-- JS inserts checkboxes for each user -->
+          </div>
+        </div>
+
+        <!-- Custom Split Input Box (visible only if custom is selected) -->
+        <div class="form-group hidden" id="custom-split-amounts-box">
+          <label>指定每人分攤金額 (<span id="custom-split-currency-label">TWD</span>)</label>
+          <div class="custom-amounts-list" id="exp-custom-amounts-list">
+            <!-- JS generates input fields per participant -->
+          </div>
+          <p class="form-help-text text-danger" id="custom-split-error-msg"></p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="exp-payment-method">支付工具</label>
+            <select id="exp-payment-method">
+              <option value="信用卡">信用卡</option>
+              <option value="現金">現金</option>
+              <option value="IC卡">IC卡 (Suica/Pasmo)</option>
+              <option value="行動支付">行動支付 (PayPay/ApplePay)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="exp-settlement-status">結清狀態</label>
+            <select id="exp-settlement-status">
+              <option value="unsettled">未結清</option>
+              <option value="settled">已結清</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="exp-note">備註</label>
+          <textarea id="exp-note" rows="2" placeholder="記下備用說明、拆帳備忘..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-expense">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存支出</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Itinerary Form -->
+  <div class="modal" id="modal-itinerary">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="itinerary-modal-title">新增行程項目</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-itinerary" class="modal-form">
+        <input type="hidden" id="itinerary-id-input">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="iti-date">日期 <span class="required">*</span></label>
+            <input type="date" id="iti-date" required>
+          </div>
+          <div class="form-group">
+            <label for="iti-category">類型 <span class="required">*</span></label>
+            <select id="iti-category" required>
+              <option value="景點">景點</option>
+              <option value="餐廳">餐廳</option>
+              <option value="交通">交通</option>
+              <option value="購物">購物</option>
+              <option value="住宿">住宿</option>
+              <option value="自由活動">自由活動</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="iti-start-time">開始時間</label>
+            <input type="time" id="iti-start-time">
+          </div>
+          <div class="form-group">
+            <label for="iti-end-time">結束時間</label>
+            <input type="time" id="iti-end-time">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="iti-area">區域 <span class="required">*</span></label>
+            <input type="text" id="iti-area" placeholder="例如: 上野、澀谷、河口湖..." required>
+          </div>
+          <div class="form-group">
+            <label for="iti-priority">優先度</label>
+            <select id="iti-priority">
+              <option value="high">高優先</option>
+              <option value="medium" selected>中優先</option>
+              <option value="low">低優先</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="iti-title">行程標題 <span class="required">*</span></label>
+          <input type="text" id="iti-title" placeholder="例如: Skyliner 搭乘、Yoroniku 燒肉..." required>
+        </div>
+
+        <div class="form-group">
+          <label for="iti-location-name">詳細地點名稱</label>
+          <input type="text" id="iti-location-name" placeholder="例如: 表參道 YORONIKU 青山店">
+        </div>
+
+        <div class="form-group">
+          <label for="iti-google-map-url">Google Maps 連結</label>
+          <input type="url" id="iti-google-map-url" placeholder="https://maps.google.com/...">
+        </div>
+
+        <div class="form-group">
+          <label for="iti-transport-note">交通方式備註</label>
+          <input type="text" id="iti-transport-note" placeholder="例如: 地鐵銀座線 表參道站 B1 出口步行 5 分鐘">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="iti-reservation-status">預約狀態</label>
+            <select id="iti-reservation-status">
+              <option value="none">無需預約</option>
+              <option value="pending">待預約</option>
+              <option value="confirmed">已確認預約</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="iti-is-flexible">彈性行程</label>
+            <select id="iti-is-flexible">
+              <option value="false">固定排定</option>
+              <option value="true">彈性調整/備選</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="iti-backup-plan">雨天/排隊備案</label>
+          <textarea id="iti-backup-plan" rows="2" placeholder="例如: 下雨則改去池袋 Sunshine City 室內景點"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="iti-note">備註說明</label>
+          <textarea id="iti-note" rows="2" placeholder="門票費用、代訂人等重要資訊..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-itinerary">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存行程</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Todo Form -->
+  <div class="modal" id="modal-todo">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="todo-modal-title">新增待補資料項目</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-todo" class="modal-form">
+        <input type="hidden" id="todo-id-input">
+
+        <div class="form-group">
+          <label for="todo-title">待補項目 <span class="required">*</span></label>
+          <input type="text" id="todo-title" placeholder="例如: 補上三之輪住宿地址、確認富士山包車司機聯絡方式..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="todo-category">類別 <span class="required">*</span></label>
+            <select id="todo-category" required>
+              <option value="住宿">住宿</option>
+              <option value="交通">交通</option>
+              <option value="餐廳">餐廳</option>
+              <option value="景點">景點</option>
+              <option value="支出">支出</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="todo-priority">優先度 <span class="required">*</span></label>
+            <select id="todo-priority" required>
+              <option value="high">高優先</option>
+              <option value="medium" selected>中優先</option>
+              <option value="low">低優先</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="todo-owner">負責人</label>
+            <select id="todo-owner">
+              <!-- JS populates users options -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="todo-status">處理狀態 <span class="required">*</span></label>
+            <select id="todo-status" required>
+              <option value="open">待處理 (Open)</option>
+              <option value="doing">處理中 (Doing)</option>
+              <option value="done">已完成 (Done)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="todo-due-date">期限日期</label>
+          <input type="date" id="todo-due-date">
+        </div>
+
+        <div class="form-group">
+          <label for="todo-note">備註說明</label>
+          <textarea id="todo-note" rows="2" placeholder="詳細紀錄待辦事項細節..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-todo">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存項目</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lucide Icon Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
