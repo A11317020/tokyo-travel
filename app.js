@@ -452,10 +452,10 @@ const DEFAULT_TRANSPORTS = [
     departureTime: "13:40",
     arrivalTime: "14:24",
     route: "Skyliner 43 號",
-    ticketStatus: "not_bought",
+    ticketStatus: "bought",
     cost: 0,
-    payer: "待補",
-    note: "回程 Skyliner，14:50 前需抵達機場櫃檯，可購買現場票或提前線上訂票"
+    payer: "莊",
+    note: "回程 Skyliner，已購票完成 (費用已包含在去程套票中)"
   },
   {
     id: "tr-6",
@@ -665,11 +665,16 @@ const DEFAULT_EXPENSES = [
 const DEFAULT_TODOS = [
   { id: "todo-1", title: "補齊三之輪飯店詳細資訊 (名稱、地址、入住密碼、總金額)", category: "住宿", priority: "high", ownerId: "u-2", status: "open", dueDate: "2026-06-15", note: "航班改期追加的最後一晚住宿，由陳負責與房東確認細節" },
   { id: "todo-2", title: "確認富士山一日包車司機聯絡方式、集合起點與確切時間", category: "交通", priority: "high", ownerId: "u-2", status: "open", dueDate: "2026-06-20", note: "陳需與包車公司確認司機的 LINE 或 WeChat 帳號" },
-  { id: "todo-3", title: "購買回程 Skyliner (京成上野 → 成田) 票券或確認購票金額", category: "交通", priority: "high", ownerId: "u-1", status: "open", dueDate: "2026-06-25", note: "莊負責詢問大家是否要在回程線上刷卡購買，或是現場排隊購買" },
+  { id: "todo-3", title: "購買回程 Skyliner (京成上野 → 成田) 票券或確認購票金額", category: "交通", priority: "high", ownerId: "u-1", status: "done", dueDate: "2026-06-25", note: "已購買並出票完成，費用已併入去程套票中" },
   { id: "todo-4", title: "訂購 Shibuya Sky 門票 (搶購 6/23 18:00 黃昏時段)", category: "景點", priority: "medium", ownerId: "u-1", status: "open", dueDate: "2026-06-01", note: "日本時間 6/1 00:00 (台灣 5/31 23:00) 開搶，莊負責上官網訂購" },
   { id: "todo-5", title: "確認同行 5 人中文姓名與護照代號 (分帳與票券預訂必備)", category: "其他", priority: "high", ownerId: "u-1", status: "done", dueDate: "2026-05-10", note: "已補齊 5 人代號：莊、陳、包、賴、李" },
   { id: "todo-6", title: "確認 6/26 彈性日的新宿、東京鐵塔或銀座行程內容與餐廳", category: "景點", priority: "medium", ownerId: "u-2", status: "open", dueDate: "2026-06-20", note: "討論此日要安排逛哪裡，晚餐預計吃鶏繁，是否需訂位待確認" },
   { id: "todo-7", title: "調查 6/27 退房後上野車站寄放行李之置物櫃位置與備選點", category: "住宿", priority: "medium", ownerId: "u-3", status: "open", dueDate: "2026-06-20", note: "上野站置物櫃容易客滿，包需上網搜尋是否有其他行李寄放服務 (如 Ecbo Cloak)" }
+];
+
+
+const DEFAULT_TICKETS = [
+  { id: "tk-1", title: "Skyliner 去程車票", owner: "全體", qrImage: "" }
 ];
 
 
@@ -686,6 +691,44 @@ function loadState() {
       const parsed = JSON.parse(data);
       // Ensure all fields exist
       if (parsed.users && parsed.itineraries && parsed.accommodations && parsed.transports && parsed.foods && parsed.places && parsed.expenses && parsed.todos) {
+        let isModified = false;
+
+        // Reset tickets to 1 default ticket if version isn't migrated to v2 yet
+        if (!parsed.ticketVersion || parsed.ticketVersion !== "v2") {
+          parsed.tickets = DEFAULT_TICKETS;
+          parsed.ticketVersion = "v2";
+          isModified = true;
+        }
+
+        // Migrate return Skyliner to bought (0 additional cost, since it is a round-trip package)
+        const returnSkyliner = parsed.transports.find(t => t.id === "tr-5");
+        if (returnSkyliner && (returnSkyliner.ticketStatus !== "bought" || returnSkyliner.cost !== 0)) {
+          returnSkyliner.ticketStatus = "bought";
+          returnSkyliner.cost = 0;
+          returnSkyliner.payer = "莊";
+          returnSkyliner.note = "回程 Skyliner，已購票完成 (費用已包含在去程套票中)";
+          isModified = true;
+        }
+
+        // Migrate Todo-3 to done
+        const todo3 = parsed.todos.find(t => t.id === "todo-3");
+        if (todo3 && (todo3.status !== "done" || !todo3.note.includes("併入去程"))) {
+          todo3.status = "done";
+          todo3.note = "已購買並出票完成，費用已併入去程套票中";
+          isModified = true;
+        }
+
+        // Remove return Skyliner duplicate expense (exp-8) if present in state
+        const exp8Index = parsed.expenses.findIndex(e => e.id === "exp-8");
+        if (exp8Index !== -1) {
+          parsed.expenses.splice(exp8Index, 1);
+          isModified = true;
+        }
+
+        if (isModified) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        }
+
         return parsed;
       }
     } catch (e) {
@@ -703,6 +746,8 @@ function loadState() {
     places: DEFAULT_PLACES,
     expenses: DEFAULT_EXPENSES,
     todos: DEFAULT_TODOS,
+    tickets: DEFAULT_TICKETS,
+    ticketVersion: "v2",
     exchangeRate: 0.21 // JPY to TWD
   };
   saveState(defaultState);
@@ -838,6 +883,7 @@ function renderPageData(viewId) {
       break;
     case "transport":
       renderTransport();
+      renderTickets();
       postRender();
       break;
     case "food":
@@ -1312,6 +1358,7 @@ document.querySelectorAll("#timeline-filters .filter-chip").forEach(chip => {
 
 function renderAccommodations() {
   const container = document.getElementById("accommodations-list");
+  if (!container) return;
   container.innerHTML = "";
 
   APP_STATE.accommodations.forEach(acc => {
@@ -1394,8 +1441,14 @@ function renderAccommodations() {
 
       ${storesListHtml}
 
-      <div class="stay-card-actions">
+      <div class="stay-card-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
         ${mapBtn}
+        <button class="app-btn btn-secondary btn-sm btn-edit-accommodation" data-id="${acc.id}">
+          <i data-lucide="edit-2"></i> 編輯
+        </button>
+        <button class="app-btn btn-danger btn-sm btn-delete-accommodation" data-id="${acc.id}">
+          <i data-lucide="trash"></i> 刪除
+        </button>
         <button class="app-btn btn-secondary btn-sm" onclick="openTodoModalForAccommodation('${acc.name}')">
           <i data-lucide="check-square"></i> 更新缺漏
         </button>
@@ -1403,6 +1456,21 @@ function renderAccommodations() {
     `;
 
     container.appendChild(card);
+  });
+
+  // Attach click handlers
+  container.querySelectorAll(".btn-edit-accommodation").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      openAccommodationModal(id);
+    };
+  });
+
+  container.querySelectorAll(".btn-delete-accommodation").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      deleteAccommodation(id);
+    };
   });
 }
 
@@ -1415,12 +1483,132 @@ function openTodoModalForAccommodation(accName) {
   document.getElementById("todo-priority").value = "high";
 }
 
+function openAccommodationModal(id) {
+  closeAllModals();
+  const modal = document.getElementById("modal-accommodation");
+  if (!modal) return;
+  modal.classList.add("active");
+
+  const form = document.getElementById("form-accommodation");
+  form.reset();
+
+  const titleNode = document.getElementById("accommodation-modal-title");
+  const idInput = document.getElementById("accommodation-id-input");
+
+  if (id) {
+    titleNode.textContent = "編輯住宿明細";
+    idInput.value = id;
+
+    const acc = APP_STATE.accommodations.find(item => item.id === id);
+    if (acc) {
+      document.getElementById("acc-modal-name").value = acc.name;
+      document.getElementById("acc-modal-area").value = acc.area;
+      document.getElementById("acc-modal-platform").value = acc.bookingPlatform || "";
+      document.getElementById("acc-modal-checkin-date").value = acc.checkInDate;
+      document.getElementById("acc-modal-checkout-date").value = acc.checkOutDate;
+      document.getElementById("acc-modal-checkin-time").value = acc.checkInTime || "";
+      document.getElementById("acc-modal-checkout-time").value = acc.checkOutTime || "";
+      document.getElementById("acc-modal-address").value = acc.address || "";
+      document.getElementById("acc-modal-station").value = acc.nearestStation || "";
+      document.getElementById("acc-modal-booking-no").value = acc.bookingNumber || "";
+      document.getElementById("acc-modal-payer-select").value = acc.payer || "待補";
+      document.getElementById("acc-modal-total-amt").value = acc.totalAmount || 0;
+      document.getElementById("acc-modal-per-person").value = acc.perPersonAmount || 0;
+      document.getElementById("acc-modal-luggage").value = acc.luggageNote || "";
+      document.getElementById("acc-modal-note").value = acc.note || "";
+    }
+  } else {
+    titleNode.textContent = "新增住宿項目";
+    idInput.value = "";
+    document.getElementById("acc-modal-checkin-date").value = "2026-06-22";
+    document.getElementById("acc-modal-checkout-date").value = "2026-06-27";
+    document.getElementById("acc-modal-payer-select").value = "待補";
+    document.getElementById("acc-modal-total-amt").value = 0;
+    document.getElementById("acc-modal-per-person").value = 0;
+  }
+}
+
+function onAccommodationFormSubmit(evt) {
+  evt.preventDefault();
+
+  const id = document.getElementById("accommodation-id-input").value;
+  const name = document.getElementById("acc-modal-name").value;
+  const area = document.getElementById("acc-modal-area").value;
+  const bookingPlatform = document.getElementById("acc-modal-platform").value;
+  const checkInDate = document.getElementById("acc-modal-checkin-date").value;
+  const checkOutDate = document.getElementById("acc-modal-checkout-date").value;
+  const checkInTime = document.getElementById("acc-modal-checkin-time").value;
+  const checkOutTime = document.getElementById("acc-modal-checkout-time").value;
+  const address = document.getElementById("acc-modal-address").value;
+  const nearestStation = document.getElementById("acc-modal-station").value;
+  const bookingNumber = document.getElementById("acc-modal-booking-no").value;
+  const payer = document.getElementById("acc-modal-payer-select").value;
+  const totalAmount = Number(document.getElementById("acc-modal-total-amt").value) || 0;
+  const perPersonAmount = Number(document.getElementById("acc-modal-per-person").value) || 0;
+  const luggageNote = document.getElementById("acc-modal-luggage").value;
+  const note = document.getElementById("acc-modal-note").value;
+
+  // Keep existing nearbyStores array if modifying, else empty array
+  let nearbyStores = [];
+  if (id) {
+    const existing = APP_STATE.accommodations.find(item => item.id === id);
+    if (existing && existing.nearbyStores) {
+      nearbyStores = existing.nearbyStores;
+    }
+  }
+
+  const accommodationItem = {
+    id: id || `acc-${Date.now()}`,
+    name,
+    area,
+    nearestStation,
+    checkInDate,
+    checkOutDate,
+    checkInTime,
+    checkOutTime,
+    address,
+    bookingPlatform,
+    bookingNumber,
+    payer,
+    totalAmount,
+    perPersonAmount,
+    luggageNote,
+    note,
+    nearbyStores
+  };
+
+  if (id) {
+    const idx = APP_STATE.accommodations.findIndex(item => item.id === id);
+    if (idx !== -1) APP_STATE.accommodations[idx] = accommodationItem;
+  } else {
+    APP_STATE.accommodations.push(accommodationItem);
+  }
+
+  saveState(APP_STATE);
+  closeAllModals();
+  renderAccommodations();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function deleteAccommodation(id) {
+  const acc = APP_STATE.accommodations.find(item => item.id === id);
+  if (!acc) return;
+
+  if (confirm(`確定要刪除「${acc.name}」的住宿項目嗎？`)) {
+    APP_STATE.accommodations = APP_STATE.accommodations.filter(item => item.id !== id);
+    saveState(APP_STATE);
+    renderAccommodations();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
 // --------------------------------------------------------------------------
 // 4.4 Transportation Page Render Details
 // --------------------------------------------------------------------------
 
 function renderTransport() {
   const container = document.getElementById("transport-list");
+  if (!container) return;
   container.innerHTML = "";
 
   APP_STATE.transports.forEach(tr => {
@@ -1474,23 +1662,379 @@ function renderTransport() {
         </div>` : ""}
       </div>
 
-      <div class="stay-card-actions">
-        <button class="app-btn btn-secondary btn-sm" onclick="openTodoModalForTransport('${tr.type} ${tr.departureLocation}-${tr.arrivalLocation}')">
-          <i data-lucide="check-square"></i> 更新狀態
+      <div class="stay-card-actions" style="display: flex; gap: 8px;">
+        <button class="app-btn btn-secondary btn-sm btn-edit-transport" data-id="${tr.id}">
+          <i data-lucide="edit-2"></i> 編輯
+        </button>
+        <button class="app-btn btn-danger btn-sm btn-delete-transport" data-id="${tr.id}">
+          <i data-lucide="trash"></i> 刪除
         </button>
       </div>
     `;
 
     container.appendChild(card);
   });
+
+  // Attach click handlers
+  container.querySelectorAll(".btn-edit-transport").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      openTransportModal(id);
+    };
+  });
+
+  container.querySelectorAll(".btn-delete-transport").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      deleteTransport(id);
+    };
+  });
 }
 
-function openTodoModalForTransport(trName) {
-  document.querySelector('[data-view="todos"]').click();
-  openTodoModal(null);
-  document.getElementById("todo-title").value = `跟進並確認 [${trName}] 票券狀態或金額細節`;
-  document.getElementById("todo-category").value = "交通";
-  document.getElementById("todo-priority").value = "high";
+function openTransportModal(id) {
+  closeAllModals();
+  const modal = document.getElementById("modal-transport");
+  if (!modal) return;
+  modal.classList.add("active");
+
+  const form = document.getElementById("form-transport");
+  form.reset();
+
+  const titleNode = document.getElementById("transport-modal-title");
+  const idInput = document.getElementById("transport-id-input");
+
+  if (id) {
+    titleNode.textContent = "編輯交通明細";
+    idInput.value = id;
+
+    const tr = APP_STATE.transports.find(item => item.id === id);
+    if (tr) {
+      document.getElementById("tr-modal-date").value = tr.date;
+      document.getElementById("tr-modal-type").value = tr.type;
+      document.getElementById("tr-modal-dep-loc").value = tr.departureLocation;
+      document.getElementById("tr-modal-arr-loc").value = tr.arrivalLocation;
+      document.getElementById("tr-modal-dep-time").value = tr.departureTime;
+      document.getElementById("tr-modal-arr-time").value = tr.arrivalTime;
+      document.getElementById("tr-modal-route").value = tr.route;
+      document.getElementById("tr-modal-status").value = tr.ticketStatus;
+      document.getElementById("tr-modal-payer-select").value = tr.payer || "待補";
+      document.getElementById("tr-modal-cost").value = tr.cost || 0;
+      document.getElementById("tr-modal-note").value = tr.note || "";
+    }
+  } else {
+    titleNode.textContent = "新增交通明細";
+    idInput.value = "";
+    document.getElementById("tr-modal-date").value = "2026-06-22"; // Start of Tokyo trip
+    document.getElementById("tr-modal-status").value = "bought";
+    document.getElementById("tr-modal-payer-select").value = "待補";
+    document.getElementById("tr-modal-cost").value = 0;
+  }
+}
+
+function onTransportFormSubmit(evt) {
+  evt.preventDefault();
+
+  const id = document.getElementById("transport-id-input").value;
+  const date = document.getElementById("tr-modal-date").value;
+  const type = document.getElementById("tr-modal-type").value;
+  const departureLocation = document.getElementById("tr-modal-dep-loc").value;
+  const arrivalLocation = document.getElementById("tr-modal-arr-loc").value;
+  const departureTime = document.getElementById("tr-modal-dep-time").value;
+  const arrivalTime = document.getElementById("tr-modal-arr-time").value;
+  const route = document.getElementById("tr-modal-route").value;
+  const ticketStatus = document.getElementById("tr-modal-status").value;
+  const payer = document.getElementById("tr-modal-payer-select").value;
+  const cost = Number(document.getElementById("tr-modal-cost").value) || 0;
+  const note = document.getElementById("tr-modal-note").value;
+
+  const transportItem = {
+    id: id || `tr-${Date.now()}`,
+    date,
+    type,
+    departureLocation,
+    arrivalLocation,
+    departureTime,
+    arrivalTime,
+    route,
+    ticketStatus,
+    payer,
+    cost,
+    note
+  };
+
+  if (id) {
+    const idx = APP_STATE.transports.findIndex(item => item.id === id);
+    if (idx !== -1) APP_STATE.transports[idx] = transportItem;
+  } else {
+    APP_STATE.transports.push(transportItem);
+  }
+
+  saveState(APP_STATE);
+  closeAllModals();
+  renderTransport();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function deleteTransport(id) {
+  const tr = APP_STATE.transports.find(item => item.id === id);
+  if (!tr) return;
+
+  if (confirm(`確定要刪除從「${tr.departureLocation}」到「${tr.arrivalLocation}」的交通項目嗎？`)) {
+    APP_STATE.transports = APP_STATE.transports.filter(item => item.id !== id);
+    saveState(APP_STATE);
+    renderTransport();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+// --------------------------------------------------------------------------
+// 4.4.2 Ticket Wallet Render Details
+// --------------------------------------------------------------------------
+
+function renderTickets() {
+  const container = document.getElementById("tickets-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!APP_STATE.tickets) {
+    APP_STATE.tickets = DEFAULT_TICKETS;
+    saveState(APP_STATE);
+  }
+
+  APP_STATE.tickets.forEach(tk => {
+    const card = document.createElement("div");
+    card.className = "ticket-card";
+
+    let qrContent = "";
+    if (tk.qrImage) {
+      // If there is an uploaded base64 image
+      qrContent = `<img class="ticket-qr-img" src="${tk.qrImage}" alt="QR Code" onclick="zoomTicketQR('${tk.title} (${tk.owner})', '${tk.qrImage}')">`;
+    } else {
+      // Show upload placeholder
+      qrContent = `
+        <div class="ticket-qr-placeholder" onclick="document.getElementById('input-file-${tk.id}').click()">
+          <i data-lucide="qr-code"></i>
+          <span style="font-size:0.8rem; font-weight:500;">點擊上傳 QR Code</span>
+          <span style="font-size:0.7rem; color:var(--text-muted);">或選下方按鈕選擇</span>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="ticket-card-header">
+        <div style="display: flex; flex-direction: column; gap: 4px; max-width: 70%;">
+          <span class="ticket-title" style="word-break: break-all;">${tk.title}</span>
+          <span class="ticket-owner-badge" style="align-self: flex-start;">${tk.owner}</span>
+        </div>
+        <div style="display: flex; gap: 4px; align-self: flex-start;">
+          <button class="app-btn btn-secondary btn-sm btn-edit-ticket" data-id="${tk.id}" title="編輯名稱/所有人" style="padding: 4px 8px; font-size: 0.75rem; height: auto;">
+            <i data-lucide="edit-2" style="width: 12px; height: 12px;"></i>
+          </button>
+          <button class="app-btn btn-danger btn-sm btn-delete-ticket" data-id="${tk.id}" title="刪除票卡" style="padding: 4px 8px; font-size: 0.75rem; height: auto;">
+            <i data-lucide="trash" style="width: 12px; height: 12px;"></i>
+          </button>
+        </div>
+      </div>
+      <div class="ticket-qr-container">
+        ${qrContent}
+      </div>
+      <div class="ticket-card-footer">
+        <div class="ticket-upload-btn">
+          <button class="app-btn btn-secondary btn-sm" style="width:100%;">
+            <i data-lucide="upload"></i> ${tk.qrImage ? "重新上傳" : "上傳車票"}
+          </button>
+          <input type="file" id="input-file-${tk.id}" accept="image/*" onchange="handleTicketUpload(event, '${tk.id}')">
+        </div>
+        ${tk.qrImage ? `
+          <button class="app-btn btn-danger btn-sm" onclick="clearTicketQR('${tk.id}')" title="清除圖片">
+            <i data-lucide="trash-2"></i>
+          </button>
+        ` : ""}
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  // Attach edit & delete click handlers
+  container.querySelectorAll(".btn-edit-ticket").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      openTicketModal(id);
+    };
+  });
+
+  container.querySelectorAll(".btn-delete-ticket").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      deleteTicket(id);
+    };
+  });
+}
+
+function openTicketModal(id) {
+  closeAllModals();
+  const modal = document.getElementById("modal-ticket");
+  if (!modal) return;
+  modal.classList.add("active");
+
+  const form = document.getElementById("form-ticket");
+  form.reset();
+
+  const titleNode = document.getElementById("ticket-modal-title");
+  const idInput = document.getElementById("ticket-id-input");
+
+  if (id) {
+    titleNode.textContent = "編輯票卡資訊";
+    idInput.value = id;
+
+    const tk = APP_STATE.tickets.find(item => item.id === id);
+    if (tk) {
+      document.getElementById("tk-modal-title").value = tk.title;
+      document.getElementById("tk-modal-owner").value = tk.owner;
+    }
+  } else {
+    titleNode.textContent = "新增電子票卡";
+    idInput.value = "";
+    document.getElementById("tk-modal-owner").value = "全體";
+  }
+}
+
+function onTicketFormSubmit(evt) {
+  evt.preventDefault();
+
+  const id = document.getElementById("ticket-id-input").value;
+  const title = document.getElementById("tk-modal-title").value;
+  const owner = document.getElementById("tk-modal-owner").value;
+
+  if (id) {
+    // Edit mode
+    const tk = APP_STATE.tickets.find(item => item.id === id);
+    if (tk) {
+      tk.title = title;
+      tk.owner = owner;
+    }
+  } else {
+    // Add mode
+    const newTk = {
+      id: `tk-${Date.now()}`,
+      title: title,
+      owner: owner,
+      qrImage: ""
+    };
+    APP_STATE.tickets.push(newTk);
+  }
+
+  saveState(APP_STATE);
+  closeAllModals();
+  renderTickets();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function deleteTicket(id) {
+  const tk = APP_STATE.tickets.find(item => item.id === id);
+  if (!tk) return;
+
+  if (confirm(`確定要刪除「${tk.title} (${tk.owner})」這個票卡嗎？將會永久移除該票卡及裡面的 QR Code。`)) {
+    APP_STATE.tickets = APP_STATE.tickets.filter(item => item.id !== id);
+    saveState(APP_STATE);
+    renderTickets();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function handleTicketUpload(event, ticketId) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file is indeed an image
+  if (!file.type.startsWith("image/")) {
+    alert("請選擇圖片格式的檔案！");
+    return;
+  }
+
+  // Compress the image before saving to localStorage to prevent exceeding 5MB quota
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // Use canvas to compress the image
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Max size for QR code image (400x400 is plenty of resolution for scanner)
+      const maxDim = 400;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        }
+      } else {
+        if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to compressed jpeg base64
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7); // 70% quality is very clean for QR
+
+      // Save to state
+      const ticket = APP_STATE.tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        ticket.qrImage = compressedDataUrl;
+        saveState(APP_STATE);
+        renderTickets();
+        if (window.lucide) window.lucide.createIcons();
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearTicketQR(ticketId) {
+  if (confirm("確定要清除這張車票的 QR Code 嗎？")) {
+    const ticket = APP_STATE.tickets.find(t => t.id === ticketId);
+    if (ticket) {
+      ticket.qrImage = "";
+      saveState(APP_STATE);
+      renderTickets();
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+}
+
+function zoomTicketQR(title, imgUrl) {
+  const lightbox = document.getElementById("modal-ticket-lightbox");
+  const titleNode = document.getElementById("lightbox-ticket-title");
+  const imgNode = document.getElementById("lightbox-ticket-img");
+
+  if (lightbox && titleNode && imgNode) {
+    titleNode.textContent = title;
+    imgNode.src = imgUrl;
+    lightbox.classList.add("active");
+  }
+}
+
+function initTicketLightbox() {
+  const lightbox = document.getElementById("modal-ticket-lightbox");
+  const closeBtn = document.getElementById("btn-close-lightbox");
+  const backdrop = document.getElementById("ticket-lightbox-backdrop");
+
+  const closeLightbox = () => {
+    if (lightbox) lightbox.classList.remove("active");
+  };
+
+  if (closeBtn) closeBtn.onclick = closeLightbox;
+  if (backdrop) backdrop.onclick = closeLightbox;
 }
 
 // --------------------------------------------------------------------------
@@ -1574,7 +2118,9 @@ function renderFood() {
       </div>
 
       <div class="food-card-actions">
-        ${f.googleMapUrl ? `<a href="${f.googleMapUrl}" target="_blank" class="app-btn btn-secondary btn-sm"><i data-lucide="map"></i> 開啟地圖</a>` : ""}
+        <a href="${f.googleMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((f.nameJp || f.nameEn) + ' Tokyo')}`}" target="_blank" class="app-btn btn-secondary btn-sm">
+          <i data-lucide="map"></i> 開啟地圖
+        </a>
         <button class="app-btn btn-secondary btn-sm" onclick="openExpenseFormForFood('${f.nameEn}', ${f.estimatedBudget || 0})">
           <i data-lucide="wallet"></i> 記錄此筆支出
         </button>
@@ -1611,7 +2157,9 @@ function renderFood() {
       </div>
 
       <div class="food-card-actions">
-        ${f.googleMapUrl ? `<a href="${f.googleMapUrl}" target="_blank" class="app-btn btn-secondary btn-sm"><i data-lucide="map"></i> 開啟地圖</a>` : ""}
+        <a href="${f.googleMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((f.nameJp || f.nameEn) + ' Tokyo')}`}" target="_blank" class="app-btn btn-secondary btn-sm">
+          <i data-lucide="map"></i> 開啟地圖
+        </a>
       </div>
     `;
     backupContainer.appendChild(card);
@@ -1692,11 +2240,6 @@ function renderPlaces() {
     const card = document.createElement("div");
     card.className = "place-card";
 
-    let priorityBadge = "";
-    if (p.priority === "high") priorityBadge = `<span class="badge badge-danger">高優先</span>`;
-    else if (p.priority === "medium") priorityBadge = `<span class="badge badge-warning">中優先</span>`;
-    else priorityBadge = `<span class="badge badge-muted">低優先</span>`;
-
     const ticketTag = p.ticketRequired ? `<span class="badge badge-accent">需門票</span>` : "";
     const resvTag = p.reservationRequired ? `<span class="badge badge-warning">需預約</span>` : "";
 
@@ -1705,9 +2248,6 @@ function renderPlaces() {
         <div>
           <h4 class="place-card-title">${p.name}</h4>
           <span style="font-size:0.8rem; color:var(--text-muted);">${p.area} ｜ ${p.category}</span>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-          ${priorityBadge}
         </div>
       </div>
 
@@ -1723,7 +2263,9 @@ function renderPlaces() {
       </div>
 
       <div class="place-card-actions">
-        ${p.googleMapUrl ? `<a href="${p.googleMapUrl}" target="_blank" class="app-btn btn-secondary btn-sm"><i data-lucide="map"></i> 開啟地圖</a>` : ""}
+        <a href="${p.googleMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' Tokyo')}`}" target="_blank" class="app-btn btn-secondary btn-sm">
+          <i data-lucide="map"></i> 開啟地圖
+        </a>
       </div>
     `;
 
@@ -2396,12 +2938,32 @@ function initFormControllers() {
   // Custom Select options generation
   const expPayerSelect = document.getElementById("exp-payer");
   const todoOwnerSelect = document.getElementById("todo-owner");
+  const tkOwnerSelect = document.getElementById("tk-modal-owner");
   
   if (expPayerSelect) {
     expPayerSelect.innerHTML = APP_STATE.users.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
   }
   if (todoOwnerSelect) {
     todoOwnerSelect.innerHTML = `<option value="">所有人</option>` + APP_STATE.users.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+  }
+  if (tkOwnerSelect) {
+    tkOwnerSelect.innerHTML = `<option value="全體">全體</option>` + APP_STATE.users.map(u => `<option value="${u.name}">${u.name}</option>`).join("");
+  }
+  
+  const trPayerSelect = document.getElementById("tr-modal-payer-select");
+  if (trPayerSelect) {
+    trPayerSelect.innerHTML = `
+      <option value="待補">待補</option>
+      <option value="個人">個人自理</option>
+    ` + APP_STATE.users.map(u => `<option value="${u.name}">${u.name}</option>`).join("");
+  }
+
+  const accPayerSelect = document.getElementById("acc-modal-payer-select");
+  if (accPayerSelect) {
+    accPayerSelect.innerHTML = `
+      <option value="待補">待補</option>
+      <option value="個人">個人自理</option>
+    ` + APP_STATE.users.map(u => `<option value="${u.name}">${u.name}</option>`).join("");
   }
 
   // Populate checkboxes for participants selection in splits
@@ -2466,11 +3028,55 @@ function initFormControllers() {
   document.getElementById("form-expense").onsubmit = onExpenseFormSubmit;
   document.getElementById("form-itinerary").onsubmit = onItineraryFormSubmit;
   document.getElementById("form-todo").onsubmit = onTodoFormSubmit;
+  document.getElementById("form-ticket").onsubmit = onTicketFormSubmit;
+  document.getElementById("form-transport").onsubmit = onTransportFormSubmit;
+  document.getElementById("form-accommodation").onsubmit = onAccommodationFormSubmit;
 
   // Add Item Openers
   document.getElementById("btn-add-expense").onclick = () => openExpenseModal(null);
   document.getElementById("btn-add-itinerary").onclick = () => openItineraryModal(null);
   document.getElementById("btn-add-todo").onclick = () => openTodoModal(null);
+  
+  const addTrBtn = document.getElementById("btn-add-transport");
+  if (addTrBtn) {
+    addTrBtn.onclick = () => openTransportModal(null);
+  }
+  
+  const addTkBtn = document.getElementById("btn-add-ticket");
+  if (addTkBtn) {
+    addTkBtn.onclick = () => openTicketModal(null);
+  }
+
+  const addAccBtn = document.getElementById("btn-add-accommodation");
+  if (addAccBtn) {
+    addAccBtn.onclick = () => openAccommodationModal(null);
+  }
+
+  // Form Cancels
+  const cancelTkBtn = document.getElementById("btn-cancel-ticket");
+  if (cancelTkBtn) {
+    cancelTkBtn.onclick = () => closeAllModals();
+  }
+
+  const cancelTrBtn = document.getElementById("btn-cancel-transport");
+  if (cancelTrBtn) {
+    cancelTrBtn.onclick = () => closeAllModals();
+  }
+
+  const cancelAccBtn = document.getElementById("btn-cancel-accommodation");
+  if (cancelAccBtn) {
+    cancelAccBtn.onclick = () => closeAllModals();
+  }
+
+  // Auto per-person cost calculation for accommodation form
+  const accTotalAmtInput = document.getElementById("acc-modal-total-amt");
+  const accPerPersonInput = document.getElementById("acc-modal-per-person");
+  if (accTotalAmtInput && accPerPersonInput) {
+    accTotalAmtInput.addEventListener("input", (e) => {
+      const val = Number(e.target.value) || 0;
+      accPerPersonInput.value = Math.round(val / 5);
+    });
+  }
 
   // CSV Exporters
   document.getElementById("btn-export-expenses").onclick = exportExpensesCSV;
@@ -2905,4 +3511,5 @@ function exportSettlementsCSV() {
 window.addEventListener("DOMContentLoaded", () => {
   initNavigation();
   initFormControllers();
+  initTicketLightbox();
 });

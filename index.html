@@ -254,6 +254,11 @@
               <h2 class="page-title">住宿資訊</h2>
               <p class="page-desc">本次行程分為兩段住宿，請注意 6/27 退房換宿安排</p>
             </div>
+            <div class="header-buttons">
+              <button class="app-btn btn-primary" id="btn-add-accommodation">
+                <i data-lucide="plus"></i> 新增住宿
+              </button>
+            </div>
           </div>
 
           <!-- Stay warning -->
@@ -276,10 +281,30 @@
               <h2 class="page-title">交通票券與航班</h2>
               <p class="page-desc">記錄航班時刻、Skyliner 快線與富士山包車等交通明細</p>
             </div>
+            <div class="header-buttons">
+              <button class="app-btn btn-primary" id="btn-add-transport">
+                <i data-lucide="plus"></i> 新增交通
+              </button>
+            </div>
           </div>
 
           <div class="transport-grid" id="transport-list">
             <!-- JS inserts transport cards -->
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 8px;">
+            <h3 class="section-subtitle" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="wallet"></i> 電子票夾 (QR Code)
+            </h3>
+            <button class="app-btn btn-primary btn-sm" id="btn-add-ticket" style="padding: 6px 12px; font-size: 0.8rem; height: auto; display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="plus" style="width: 14px; height: 14px;"></i> 新增票卡
+            </button>
+          </div>
+          <p class="section-desc" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">
+            此區塊可上傳旅伴們的 Skyliner、機票或其他乘車憑證的 QR Code，圖檔安全地儲存在此手機瀏覽器中。點擊票卡即可放大，方便車站驗票掃描！
+          </p>
+          <div class="tickets-grid" id="tickets-list">
+            <!-- JS inserts ticket cards -->
           </div>
         </section>
 
@@ -895,6 +920,245 @@
           <button type="submit" class="app-btn btn-primary">儲存項目</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Ticket Form -->
+  <div class="modal" id="modal-ticket">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="ticket-modal-title">新增票卡</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-ticket" class="modal-form">
+        <input type="hidden" id="ticket-id-input">
+        
+        <div class="form-group">
+          <label for="tk-modal-title">票券名稱 <span class="required">*</span></label>
+          <input type="text" id="tk-modal-title" placeholder="例如: Skyliner 去程、機票、迪士尼門票..." required>
+        </div>
+
+        <div class="form-group">
+          <label for="tk-modal-owner">所有人 / 使用者 <span class="required">*</span></label>
+          <select id="tk-modal-owner" required>
+            <!-- JS populates users options + '全體' -->
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-ticket">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存票卡</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Accommodation Form -->
+  <div class="modal" id="modal-accommodation">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="accommodation-modal-title">新增住宿項目</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-accommodation" class="modal-form">
+        <input type="hidden" id="accommodation-id-input">
+
+        <div class="form-group">
+          <label for="acc-modal-name">住宿名稱 <span class="required">*</span></label>
+          <input type="text" id="acc-modal-name" placeholder="例如: 田端公寓式民宿、三之輪快捷飯店..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="acc-modal-area">地區分區 <span class="required">*</span></label>
+            <input type="text" id="acc-modal-area" placeholder="例如: 田端、三之輪" required>
+          </div>
+          <div class="form-group">
+            <label for="acc-modal-platform">訂房平台</label>
+            <input type="text" id="acc-modal-platform" placeholder="例如: Airbnb, Booking.com">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="acc-modal-checkin-date">入住日期 <span class="required">*</span></label>
+            <input type="date" id="acc-modal-checkin-date" required>
+          </div>
+          <div class="form-group">
+            <label for="acc-modal-checkout-date">退房日期 <span class="required">*</span></label>
+            <input type="date" id="acc-modal-checkout-date" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="acc-modal-checkin-time">入住時間</label>
+            <input type="text" id="acc-modal-checkin-time" placeholder="例如: 16:00">
+          </div>
+          <div class="form-group">
+            <label for="acc-modal-checkout-time">退房時間</label>
+            <input type="text" id="acc-modal-checkout-time" placeholder="例如: 10:00">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="acc-modal-address">詳細地址</label>
+          <input type="text" id="acc-modal-address" placeholder="東京都北區田端 1-20-6...">
+        </div>
+
+        <div class="form-group">
+          <label for="acc-modal-station">最近交通/車站</label>
+          <input type="text" id="acc-modal-station" placeholder="例如: JR 田端站，步行 4 分鐘...">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="acc-modal-booking-no">訂單編號</label>
+            <input type="text" id="acc-modal-booking-no" placeholder="HM-TABATA2026">
+          </div>
+          <div class="form-group">
+            <label for="acc-modal-payer">付款人 <span class="required">*</span></label>
+            <select id="acc-modal-payer-select" required>
+              <!-- JS populates users options + '待補', '個人' -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="acc-modal-total-amt">總金額 (台幣 NT$)</label>
+            <input type="number" id="acc-modal-total-amt" min="0" placeholder="35880">
+          </div>
+          <div class="form-group">
+            <label for="acc-modal-per-person">每人分攤金額 (台幣 NT$)</label>
+            <input type="number" id="acc-modal-per-person" min="0" placeholder="7176">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="acc-modal-luggage">行李寄存說明</label>
+          <input type="text" id="acc-modal-luggage" placeholder="例如: 退房後不可寄放行李，需寄放在上野車站...">
+        </div>
+
+        <div class="form-group">
+          <label for="acc-modal-note">提醒備註</label>
+          <textarea id="acc-modal-note" rows="2" placeholder="門鎖密碼、周邊生活機能、WiFi密碼..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-accommodation">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存項目</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Transport Form -->
+  <div class="modal" id="modal-transport">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="transport-modal-title">新增交通項目</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-transport" class="modal-form">
+        <input type="hidden" id="transport-id-input">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tr-modal-date">搭乘日期 <span class="required">*</span></label>
+            <input type="date" id="tr-modal-date" required>
+          </div>
+          <div class="form-group">
+            <label for="tr-modal-type">交通工具 <span class="required">*</span></label>
+            <select id="tr-modal-type" required>
+              <option value="飛機">飛機</option>
+              <option value="Skyliner">Skyliner</option>
+              <option value="JR">JR</option>
+              <option value="地鐵">地鐵</option>
+              <option value="包車">包車</option>
+              <option value="巴士">巴士</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tr-modal-dep-loc">出發地 <span class="required">*</span></label>
+            <input type="text" id="tr-modal-dep-loc" placeholder="例如: 台北 TPE、京成上野" required>
+          </div>
+          <div class="form-group">
+            <label for="tr-modal-arr-loc">目的地 <span class="required">*</span></label>
+            <input type="text" id="tr-modal-arr-loc" placeholder="例如: 成田 NRT、大月" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tr-modal-dep-time">出發時間 <span class="required">*</span></label>
+            <input type="text" id="tr-modal-dep-time" placeholder="例如: 02:20" required>
+          </div>
+          <div class="form-group">
+            <label for="tr-modal-arr-time">抵達時間 <span class="required">*</span></label>
+            <input type="text" id="tr-modal-arr-time" placeholder="例如: 06:50" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="tr-modal-route">搭乘路線 / 航班號 <span class="required">*</span></label>
+          <input type="text" id="tr-modal-route" placeholder="例如: 航班 IT202、Skyliner 43 號、JR 山手線..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tr-modal-status">購票狀態 <span class="required">*</span></label>
+            <select id="tr-modal-status" required>
+              <option value="bought">已購買/已出票</option>
+              <option value="onsite">現場購買/刷IC卡</option>
+              <option value="not_bought">未購買(高風險)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tr-modal-payer">付款人 <span class="required">*</span></label>
+            <select id="tr-modal-payer-select" required>
+              <!-- JS populates users options + '個人', '待補' -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="tr-modal-cost">費用金額 (台幣 NT$)</label>
+          <input type="number" id="tr-modal-cost" min="0" placeholder="例如: 4450 (無費用請輸入 0)" required>
+        </div>
+
+        <div class="form-group">
+          <label for="tr-modal-note">提醒備註</label>
+          <textarea id="tr-modal-note" rows="2" placeholder="航班編號、轉乘提醒、行李置物建議..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-transport">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存項目</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lightbox for Ticket QR Codes -->
+  <div class="modal" id="modal-ticket-lightbox">
+    <div class="modal-backdrop" id="ticket-lightbox-backdrop"></div>
+    <div class="lightbox-content-wrapper" style="position: relative; z-index: 101; display: flex; flex-direction: column; align-items: center; max-width: 90vw; animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin: auto;">
+      <button class="close-modal-btn" id="btn-close-lightbox" style="position: absolute; top: -45px; right: 0; color: #fff; font-size: 2.8rem; background: none; border: none; cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">&times;</button>
+      <h3 id="lightbox-ticket-title" style="color: #fff; text-align: center; margin-bottom: 16px; font-size: 1.2rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8);"></h3>
+      <div style="background: #fff; padding: 16px; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; max-width: 100%;">
+        <img id="lightbox-ticket-img" src="" alt="Ticket QR Code" style="max-width: 80vw; max-height: 60vh; object-fit: contain; display: block;">
+      </div>
+      <p style="color: #ccc; text-align: center; font-size: 0.85rem; margin-top: 16px; display: flex; align-items: center; gap: 6px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+        <i data-lucide="sun" style="width: 14px; height: 14px;"></i> 請將手機螢幕亮度調至最大以方便掃描
+      </p>
     </div>
   </div>
 
