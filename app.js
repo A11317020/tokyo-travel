@@ -748,6 +748,25 @@ const DEFAULT_TODOS = [
   { id: "todo-7", title: "調查 6/27 退房後上野車站寄放行李之置物櫃位置與備選點", category: "住宿", priority: "medium", ownerId: "u-3", status: "open", dueDate: "2026-06-20", note: "上野站置物櫃容易客滿，包需上網搜尋是否有其他行李寄放服務 (如 Ecbo Cloak)" }
 ];
 
+const DEFAULT_PACKING_ITEMS = [
+  { id: "pack-1", name: "護照", category: "證件與重要文件", packed: false },
+  { id: "pack-2", name: "Visit Japan 資料", category: "證件與重要文件", packed: false },
+  { id: "pack-3", name: "eSIM / 網路確認", category: "證件與重要文件", packed: false },
+  { id: "pack-4", name: "錢包", category: "金錢與支付", packed: false },
+  { id: "pack-5", name: "日幣現金", category: "金錢與支付", packed: false },
+  { id: "pack-6", name: "少量台幣", category: "金錢與支付", packed: false },
+  { id: "pack-7", name: "手機", category: "電子用品", packed: false },
+  { id: "pack-8", name: "行動電源（合乎標示 / Wh）", category: "電子用品", packed: false },
+  { id: "pack-9", name: "充電器", category: "電子用品", packed: false },
+  { id: "pack-10", name: "相機 / 底片機", category: "電子用品", packed: false },
+  { id: "pack-11", name: "牙刷 / 牙膏", category: "個人盥洗用品", packed: false },
+  { id: "pack-12", name: "洗面乳", category: "個人盥洗用品", packed: false },
+  { id: "pack-13", name: "毛巾 / 手帕", category: "個人盥洗用品", packed: false },
+  { id: "pack-14", name: "衛生紙 / 濕紙巾", category: "個人盥洗用品", packed: false },
+  { id: "pack-15", name: "常備藥", category: "健康與日常用品", packed: false },
+  { id: "pack-16", name: "水壺", category: "健康與日常用品", packed: false },
+  { id: "pack-17", name: "環保袋", category: "健康與日常用品", packed: false }
+];
 
 const DEFAULT_TICKETS = [
   { id: "tk-1", title: "Skyliner 去程車票", owner: "全體", qrImage: "" }
@@ -768,6 +787,12 @@ function loadState() {
       // Ensure all fields exist
       if (parsed.users && parsed.itineraries && parsed.accommodations && parsed.transports && parsed.foods && parsed.places && parsed.expenses && parsed.todos) {
         let isModified = false;
+
+        // Migrate packing items if missing
+        if (!parsed.packingItems) {
+          parsed.packingItems = DEFAULT_PACKING_ITEMS;
+          isModified = true;
+        }
 
         // Reset tickets to 1 default ticket if version isn't migrated to v2 yet
         if (!parsed.ticketVersion || parsed.ticketVersion !== "v2") {
@@ -851,6 +876,7 @@ function loadState() {
     expenses: DEFAULT_EXPENSES,
     todos: DEFAULT_TODOS,
     tickets: DEFAULT_TICKETS,
+    packingItems: DEFAULT_PACKING_ITEMS,
     ticketVersion: "v2",
     exchangeRate: 0.21 // JPY to TWD
   };
@@ -1008,6 +1034,10 @@ function renderPageData(viewId) {
       break;
     case "todos":
       renderTodos();
+      postRender();
+      break;
+    case "packing":
+      renderPackingList();
       postRender();
       break;
   }
@@ -3296,6 +3326,219 @@ function renderTodos() {
   });
 }
 
+// --------------------------------------------------------------------------
+// 4.10 Packing List Page Render Details
+// --------------------------------------------------------------------------
+
+function renderPackingList() {
+  const container = document.getElementById("packing-items-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const items = APP_STATE.packingItems || [];
+  const totalCount = items.length;
+  const packedCount = items.filter(item => item.packed).length;
+  const percent = totalCount > 0 ? Math.round((packedCount / totalCount) * 100) : 0;
+
+  // Update progress bar
+  const percentNode = document.getElementById("packing-progress-percent");
+  if (percentNode) percentNode.textContent = `${percent}%`;
+
+  const fillNode = document.getElementById("packing-progress-fill");
+  if (fillNode) fillNode.style.width = `${percent}%`;
+
+  const textNode = document.getElementById("packing-progress-text");
+  if (textNode) textNode.textContent = `已打包 ${packedCount} / ${totalCount} 件物品`;
+
+  if (totalCount === 0) {
+    container.innerHTML = `
+      <div class="empty-state-container">
+        <i data-lucide="luggage"></i>
+        <div class="empty-state-title">無行李物品</div>
+        <p class="empty-state-desc">目前行李清單中沒有任何物品，點擊右上角新增吧！</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Standard categories order
+  const categories = [
+    "證件與重要文件",
+    "金錢與支付",
+    "電子用品",
+    "個人盥洗用品",
+    "健康與日常用品"
+  ];
+
+  // Group items by category
+  const grouped = {};
+  categories.forEach(cat => grouped[cat] = []);
+  
+  // Catch-all for any other categories
+  items.forEach(item => {
+    if (!grouped[item.category]) {
+      grouped[item.category] = [];
+    }
+    grouped[item.category].push(item);
+  });
+
+  // Render each category section
+  Object.keys(grouped).forEach(cat => {
+    const catItems = grouped[cat];
+    if (catItems.length === 0) return; // skip empty categories
+
+    const catPackedCount = catItems.filter(i => i.packed).length;
+    const catTotalCount = catItems.length;
+
+    const section = document.createElement("div");
+    section.className = "packing-category-section";
+
+    section.innerHTML = `
+      <div class="packing-category-title">
+        <span>${cat}</span>
+        <span class="packing-category-count">已打包 ${catPackedCount} / ${catTotalCount}</span>
+      </div>
+      <div class="packing-items-grid"></div>
+    `;
+
+    const grid = section.querySelector(".packing-items-grid");
+
+    catItems.forEach(item => {
+      const card = document.createElement("div");
+      card.className = `packing-item-card ${item.packed ? "done" : ""}`;
+
+      const checkIcon = item.packed ? "check-circle" : "circle";
+      const checkClass = item.packed ? "done" : "";
+
+      card.innerHTML = `
+        <span class="packing-checkbox-btn ${checkClass}" data-id="${item.id}">
+          <i data-lucide="${checkIcon}"></i>
+        </span>
+        <div class="packing-item-name">${item.name}</div>
+        <div class="packing-item-actions">
+          <button class="app-btn btn-secondary btn-sm btn-edit-packing" data-id="${item.id}" aria-label="編輯"><i data-lucide="edit"></i></button>
+          <button class="app-btn btn-danger btn-sm btn-delete-packing" data-id="${item.id}" aria-label="刪除"><i data-lucide="trash-2"></i></button>
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+
+    container.appendChild(section);
+  });
+
+  // Bind card clicks to toggle packed status
+  container.querySelectorAll(".packing-item-card").forEach(card => {
+    card.onclick = () => {
+      const checkBtn = card.querySelector(".packing-checkbox-btn");
+      if (checkBtn) {
+        const id = checkBtn.getAttribute("data-id");
+        togglePackingItem(id);
+      }
+    };
+  });
+
+  // Bind edit/delete triggers (prevent propagation to card trigger)
+  container.querySelectorAll(".btn-edit-packing").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      openPackingModal(id);
+    };
+  });
+
+  container.querySelectorAll(".btn-delete-packing").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      deletePackingItem(id);
+    };
+  });
+}
+
+function togglePackingItem(id) {
+  const item = APP_STATE.packingItems.find(i => i.id === id);
+  if (item) {
+    item.packed = !item.packed;
+    saveState(APP_STATE);
+    renderPackingList();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function deletePackingItem(id) {
+  if (confirm("您確定要刪除此物品嗎？")) {
+    APP_STATE.packingItems = APP_STATE.packingItems.filter(i => i.id !== id);
+    saveState(APP_STATE);
+    renderPackingList();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function openPackingModal(id = null) {
+  closeAllModals();
+  const modal = document.getElementById("modal-packing");
+  if (!modal) return;
+
+  const titleNode = document.getElementById("packing-modal-title");
+  const idInput = document.getElementById("packing-id-input");
+  const nameInput = document.getElementById("pack-modal-name");
+  const catInput = document.getElementById("pack-modal-category");
+
+  if (id) {
+    // Edit Mode
+    const item = APP_STATE.packingItems.find(i => i.id === id);
+    if (item) {
+      titleNode.textContent = "編輯行李物品";
+      idInput.value = item.id;
+      nameInput.value = item.name;
+      catInput.value = item.category;
+    }
+  } else {
+    // Create Mode
+    titleNode.textContent = "新增行李物品";
+    idInput.value = "";
+    nameInput.value = "";
+    catInput.value = "證件與重要文件"; // default selection
+  }
+
+  modal.classList.add("active");
+}
+
+function onPackingFormSubmit(evt) {
+  evt.preventDefault();
+
+  const id = document.getElementById("packing-id-input").value;
+  const name = document.getElementById("pack-modal-name").value.trim();
+  const category = document.getElementById("pack-modal-category").value;
+
+  if (!name) {
+    alert("請輸入物品名稱");
+    return;
+  }
+
+  const item = {
+    id: id || `pack-${Date.now()}`,
+    name,
+    category,
+    packed: id ? (APP_STATE.packingItems.find(i => i.id === id)?.packed || false) : false
+  };
+
+  if (id) {
+    const idx = APP_STATE.packingItems.findIndex(i => i.id === id);
+    if (idx !== -1) {
+      APP_STATE.packingItems[idx] = item;
+    }
+  } else {
+    APP_STATE.packingItems.push(item);
+  }
+
+  saveState(APP_STATE);
+  closeAllModals();
+  renderPackingList();
+  if (window.lucide) window.lucide.createIcons();
+}
+
 
 // ==========================================================================
 // 5. Utility Data Helper Functions
@@ -3418,11 +3661,21 @@ function initFormControllers() {
   document.getElementById("form-accommodation").onsubmit = onAccommodationFormSubmit;
   document.getElementById("form-place").onsubmit = onPlaceFormSubmit;
   document.getElementById("form-food").onsubmit = onFoodFormSubmit;
+  
+  const formPacking = document.getElementById("form-packing");
+  if (formPacking) {
+    formPacking.onsubmit = onPackingFormSubmit;
+  }
 
   // Add Item Openers
   document.getElementById("btn-add-expense").onclick = () => openExpenseModal(null);
   document.getElementById("btn-add-itinerary").onclick = () => openItineraryModal(null);
   document.getElementById("btn-add-todo").onclick = () => openTodoModal(null);
+
+  const btnAddPacking = document.getElementById("btn-add-packing");
+  if (btnAddPacking) {
+    btnAddPacking.onclick = () => openPackingModal(null);
+  }
   
   const addTrBtn = document.getElementById("btn-add-transport");
   if (addTrBtn) {

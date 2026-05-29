@@ -66,6 +66,10 @@
           <i data-lucide="check-square"></i>
           <span>待補清單</span>
         </button>
+        <button class="nav-item" data-view="packing" id="btn-side-packing">
+          <i data-lucide="luggage"></i>
+          <span>行李清單</span>
+        </button>
       </nav>
       <div class="sidebar-footer">
         <button class="theme-toggle-btn" id="theme-toggle-desktop" aria-label="切換主題">
@@ -565,6 +569,38 @@
           </div>
         </section>
 
+        <!-- View: Packing List -->
+        <section class="view-panel" id="view-packing">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">行李物品清單</h2>
+              <p class="page-desc">出發前勾選確認所需攜帶的手記與隨身物件，確保沒有遺漏項目</p>
+            </div>
+            <button class="app-btn btn-primary" id="btn-add-packing">
+              <i data-lucide="plus"></i> 新增物品
+            </button>
+          </div>
+
+          <div class="packing-view-layout">
+            <!-- Progress stats bar -->
+            <div class="packing-progress-bar-container" style="background: var(--surface-soft); padding: 16px; border-radius: var(--radius-card); margin-bottom: 24px; border: 1px solid var(--border);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight: 600; font-size: 0.95rem;">打包進度</span>
+                <span id="packing-progress-percent" style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">0%</span>
+              </div>
+              <div style="width: 100%; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden;">
+                <div id="packing-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--secondary), var(--success)); transition: width 0.3s ease;"></div>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;" id="packing-progress-text">已打包 0 / 0 件物品</div>
+            </div>
+
+            <!-- Packing list categorized -->
+            <div class="packing-lists-container" id="packing-items-container">
+              <!-- JS generates packing categories & checkbox rows here -->
+            </div>
+          </div>
+        </section>
+
       </div>
 
       <!-- Mobile Bottom Navigation -->
@@ -620,6 +656,10 @@
             <button class="more-menu-item" data-view="todos">
               <i data-lucide="check-square" class="text-danger"></i>
               <span>待補清單</span>
+            </button>
+            <button class="more-menu-item" data-view="packing">
+              <i data-lucide="luggage" class="text-primary"></i>
+              <span>行李清單</span>
             </button>
           </div>
         </div>
@@ -1332,6 +1372,41 @@
 
         <div class="form-actions">
           <button type="button" class="app-btn btn-ghost" id="btn-cancel-food">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存項目</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Packing Item Form -->
+  <div class="modal" id="modal-packing">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="packing-modal-title">新增行李物品</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-packing" class="modal-form">
+        <input type="hidden" id="packing-id-input">
+        
+        <div class="form-group">
+          <label for="pack-modal-name">物品名稱 <span class="required">*</span></label>
+          <input type="text" id="pack-modal-name" placeholder="例如: 護照、行動電源、隱形眼鏡..." required>
+        </div>
+
+        <div class="form-group">
+          <label for="pack-modal-category">分類 <span class="required">*</span></label>
+          <select id="pack-modal-category" required>
+            <option value="證件與重要文件">1. 證件與重要文件</option>
+            <option value="金錢與支付">2. 金錢與支付</option>
+            <option value="電子用品">3. 電子用品</option>
+            <option value="個人盥洗用品">4. 個人盥洗用品</option>
+            <option value="健康與日常用品">5. 健康與日常用品</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-packing">取消</button>
           <button type="submit" class="app-btn btn-primary">儲存項目</button>
         </div>
       </form>
