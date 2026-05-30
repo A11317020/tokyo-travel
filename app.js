@@ -768,6 +768,54 @@ const DEFAULT_PACKING_ITEMS = [
   { id: "pack-17", name: "環保袋", category: "健康與日常用品", packed: false }
 ];
 
+const DEFAULT_SHOPPING_ITEMS = [
+  { id: "shop-1", name: "EVE 止痛藥", category: "藥妝 / 保健類", packed: false },
+  { id: "shop-2", name: "合利他命 EX Plus (幫長輩帶)", category: "藥妝 / 保健類", packed: false },
+  { id: "shop-3", name: "吉伊卡哇玩偶 (Chiikawa)", category: "模型 / 玩具", packed: false },
+  { id: "shop-4", name: "Dyson 吹風機", category: "電器 / 3C", packed: false },
+  { id: "shop-5", name: "Uniqlo 特價服飾", category: "服飾 / 配件", packed: false },
+  { id: "shop-6", name: "薯條三兄弟", category: "零食 / 伴手禮", packed: false },
+  { id: "shop-7", name: "Saborino 早安面膜", category: "美妝 / 保養類", packed: false }
+];
+
+const DEFAULT_COUPONS = [
+  {
+    id: "coupon-1",
+    store: "BicCamera",
+    title: "10% 免稅 + 最多 7% 折價優惠券",
+    expiry: "2026-08-31",
+    image: "coupons/media__1780127639944.jpg"
+  },
+  {
+    id: "coupon-2",
+    store: "國民藥妝店 KoKuMiN",
+    title: "10% 免稅 + 最多 8% 折價優惠券",
+    expiry: "2026-12-31",
+    image: "coupons/media__1780127639947.jpg"
+  },
+  {
+    id: "coupon-3",
+    store: "大國藥妝 Daikoku",
+    title: "10% 免稅 + 最多 8% 折價優惠券",
+    expiry: "2026-12-31",
+    image: "coupons/media__1780127639952.jpg"
+  },
+  {
+    id: "coupon-4",
+    store: "尚都樂客 Sundrug",
+    title: "10% 免稅 + 最多 7% 折價優惠券",
+    expiry: "2026-12-31",
+    image: "coupons/media__1780127639955.jpg"
+  },
+  {
+    id: "coupon-5",
+    store: "愛電王 EDION",
+    title: "10% 免稅 + 最多 7% 折價優惠券",
+    expiry: "2026-10-31",
+    image: "coupons/media__1780127639989.jpg"
+  }
+];
+
 const DEFAULT_TICKETS = [
   { id: "tk-1", title: "Skyliner 去程車票", owner: "全體", qrImage: "" }
 ];
@@ -791,6 +839,16 @@ function loadState() {
         // Migrate packing items if missing
         if (!parsed.packingItems) {
           parsed.packingItems = DEFAULT_PACKING_ITEMS;
+          isModified = true;
+        }
+
+        // Migrate shopping items and coupons if missing
+        if (!parsed.shoppingItems) {
+          parsed.shoppingItems = DEFAULT_SHOPPING_ITEMS;
+          isModified = true;
+        }
+        if (!parsed.coupons) {
+          parsed.coupons = DEFAULT_COUPONS;
           isModified = true;
         }
 
@@ -877,6 +935,8 @@ function loadState() {
     todos: DEFAULT_TODOS,
     tickets: DEFAULT_TICKETS,
     packingItems: DEFAULT_PACKING_ITEMS,
+    shoppingItems: DEFAULT_SHOPPING_ITEMS,
+    coupons: DEFAULT_COUPONS,
     ticketVersion: "v2",
     exchangeRate: 0.21 // JPY to TWD
   };
@@ -1038,6 +1098,10 @@ function renderPageData(viewId) {
       break;
     case "packing":
       renderPackingList();
+      postRender();
+      break;
+    case "shopping":
+      renderShopping();
       postRender();
       break;
   }
@@ -3539,6 +3603,501 @@ function onPackingFormSubmit(evt) {
   if (window.lucide) window.lucide.createIcons();
 }
 
+// --------------------------------------------------------------------------
+// 4.11 Shopping & Coupons Page Render Details
+// --------------------------------------------------------------------------
+
+let ACTIVE_SHOPPING_SUBVIEW = "shop-list";
+
+function renderShopping() {
+  // Bind sub-tabs events
+  const tabBtns = document.querySelectorAll(".sub-tab-btn");
+  tabBtns.forEach(btn => {
+    btn.onclick = () => {
+      tabBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      ACTIVE_SHOPPING_SUBVIEW = btn.getAttribute("data-subview");
+      
+      // Toggle subview sections visibility
+      const subviews = document.querySelectorAll(".subview-content");
+      subviews.forEach(sv => {
+        if (sv.id === `subview-${ACTIVE_SHOPPING_SUBVIEW}`) {
+          sv.style.display = "block";
+          sv.classList.add("active");
+        } else {
+          sv.style.display = "none";
+          sv.classList.remove("active");
+        }
+      });
+      
+      // Render data for active subview
+      if (ACTIVE_SHOPPING_SUBVIEW === "shop-list") {
+        renderShoppingList();
+      } else {
+        renderCoupons();
+      }
+      
+      if (window.lucide) window.lucide.createIcons();
+    };
+  });
+
+  // Highlight correct sub tab based on state
+  tabBtns.forEach(btn => {
+    if (btn.getAttribute("data-subview") === ACTIVE_SHOPPING_SUBVIEW) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
+
+  const subviews = document.querySelectorAll(".subview-content");
+  subviews.forEach(sv => {
+    if (sv.id === `subview-${ACTIVE_SHOPPING_SUBVIEW}`) {
+      sv.style.display = "block";
+      sv.classList.add("active");
+    } else {
+      sv.style.display = "none";
+      sv.classList.remove("active");
+    }
+  });
+
+  // Render current view
+  if (ACTIVE_SHOPPING_SUBVIEW === "shop-list") {
+    renderShoppingList();
+  } else {
+    renderCoupons();
+  }
+}
+
+function renderShoppingList() {
+  const container = document.getElementById("shopping-items-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const items = APP_STATE.shoppingItems || [];
+  const totalCount = items.length;
+  const packedCount = items.filter(item => item.packed).length;
+  const percent = totalCount > 0 ? Math.round((packedCount / totalCount) * 100) : 0;
+
+  // Update progress bar
+  const percentNode = document.getElementById("shopping-progress-percent");
+  if (percentNode) percentNode.textContent = `${percent}%`;
+
+  const fillNode = document.getElementById("shopping-progress-fill");
+  if (fillNode) fillNode.style.width = `${percent}%`;
+
+  const textNode = document.getElementById("shopping-progress-text");
+  if (textNode) textNode.textContent = `已採購 ${packedCount} / ${totalCount} 件物品`;
+
+  if (totalCount === 0) {
+    container.innerHTML = `
+      <div class="empty-state-container">
+        <i data-lucide="shopping-bag"></i>
+        <div class="empty-state-title">無購物項目</div>
+        <p class="empty-state-desc">目前的購物清單中沒有任何物品，點擊右上角新增吧！</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Categories
+  const categories = [
+    "服飾 / 配件",
+    "藥妝 / 保健類",
+    "美妝 / 保養類",
+    "模型 / 玩具",
+    "電器 / 3C",
+    "零食 / 伴手禮",
+    "其他 / 代購"
+  ];
+
+  const grouped = {};
+  categories.forEach(cat => grouped[cat] = []);
+  
+  items.forEach(item => {
+    if (!grouped[item.category]) {
+      grouped[item.category] = [];
+    }
+    grouped[item.category].push(item);
+  });
+
+  // Render categories
+  Object.keys(grouped).forEach(cat => {
+    const catItems = grouped[cat];
+    if (catItems.length === 0) return;
+
+    const catPackedCount = catItems.filter(i => i.packed).length;
+    const catTotalCount = catItems.length;
+
+    const section = document.createElement("div");
+    section.className = "packing-category-section"; // Reuse packing list visual container styles!
+
+    section.innerHTML = `
+      <div class="packing-category-title">
+        <span>${cat}</span>
+        <span class="packing-category-count">已採購 ${catPackedCount} / ${catTotalCount}</span>
+      </div>
+      <div class="packing-items-grid"></div>
+    `;
+
+    const grid = section.querySelector(".packing-items-grid");
+
+    catItems.forEach(item => {
+      const card = document.createElement("div");
+      card.className = `packing-item-card ${item.packed ? "done" : ""}`; // Reuse packing styles!
+
+      const checkIcon = item.packed ? "check-circle" : "circle";
+      const checkClass = item.packed ? "done" : "";
+
+      card.innerHTML = `
+        <span class="packing-checkbox-btn ${checkClass}" data-id="${item.id}">
+          <i data-lucide="${checkIcon}"></i>
+        </span>
+        <div class="packing-item-name">${item.name}</div>
+        <div class="packing-item-actions">
+          <button class="app-btn btn-secondary btn-sm btn-edit-shopping-item" data-id="${item.id}" aria-label="編輯"><i data-lucide="edit"></i></button>
+          <button class="app-btn btn-danger btn-sm btn-delete-shopping-item" data-id="${item.id}" aria-label="刪除"><i data-lucide="trash-2"></i></button>
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+
+    container.appendChild(section);
+  });
+
+  // Bind card clicks
+  container.querySelectorAll(".packing-item-card").forEach(card => {
+    card.onclick = () => {
+      const checkBtn = card.querySelector(".packing-checkbox-btn");
+      if (checkBtn) {
+        const id = checkBtn.getAttribute("data-id");
+        toggleShoppingItem(id);
+      }
+    };
+  });
+
+  // Bind edit/delete
+  container.querySelectorAll(".btn-edit-shopping-item").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      openShoppingItemModal(id);
+    };
+  });
+
+  container.querySelectorAll(".btn-delete-shopping-item").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      deleteShoppingItem(id);
+    };
+  });
+}
+
+function toggleShoppingItem(id) {
+  const item = APP_STATE.shoppingItems.find(i => i.id === id);
+  if (item) {
+    item.packed = !item.packed;
+    saveState(APP_STATE);
+    renderShoppingList();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function deleteShoppingItem(id) {
+  if (confirm("您確定要刪除此項目嗎？")) {
+    APP_STATE.shoppingItems = APP_STATE.shoppingItems.filter(i => i.id !== id);
+    saveState(APP_STATE);
+    renderShoppingList();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function openShoppingItemModal(id = null) {
+  closeAllModals();
+  const modal = document.getElementById("modal-shopping-item");
+  if (!modal) return;
+
+  const titleNode = document.getElementById("shopping-item-modal-title");
+  const idInput = document.getElementById("shopping-item-id-input");
+  const nameInput = document.getElementById("shop-modal-name");
+  const catInput = document.getElementById("shop-modal-category");
+
+  if (id) {
+    const item = APP_STATE.shoppingItems.find(i => i.id === id);
+    if (item) {
+      titleNode.textContent = "編輯購物項目";
+      idInput.value = item.id;
+      nameInput.value = item.name;
+      catInput.value = item.category;
+    }
+  } else {
+    titleNode.textContent = "新增購物項目";
+    idInput.value = "";
+    nameInput.value = "";
+    catInput.value = "服飾 / 配件";
+  }
+
+  modal.classList.add("active");
+}
+
+function onShoppingItemFormSubmit(evt) {
+  evt.preventDefault();
+
+  const id = document.getElementById("shopping-item-id-input").value;
+  const name = document.getElementById("shop-modal-name").value.trim();
+  const category = document.getElementById("shop-modal-category").value;
+
+  if (!name) {
+    alert("請輸入項目名稱");
+    return;
+  }
+
+  const item = {
+    id: id || `shop-${Date.now()}`,
+    name,
+    category,
+    packed: id ? (APP_STATE.shoppingItems.find(i => i.id === id)?.packed || false) : false
+  };
+
+  if (id) {
+    const idx = APP_STATE.shoppingItems.findIndex(i => i.id === id);
+    if (idx !== -1) APP_STATE.shoppingItems[idx] = item;
+  } else {
+    APP_STATE.shoppingItems.push(item);
+  }
+
+  saveState(APP_STATE);
+  closeAllModals();
+  renderShoppingList();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function renderCoupons() {
+  const container = document.getElementById("coupons-grid-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const list = APP_STATE.coupons || [];
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-container" style="grid-column: 1 / -1;">
+        <i data-lucide="ticket"></i>
+        <div class="empty-state-title">無優惠券</div>
+        <p class="empty-state-desc">目前優惠券夾中沒有任何票券，點擊右上角新增吧！</p>
+      </div>
+    `;
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "coupons-grid";
+
+  list.forEach(cp => {
+    const card = document.createElement("div");
+    card.className = "coupon-card";
+
+    let imageContent = "";
+    if (cp.image) {
+      imageContent = `
+        <div class="coupon-card-image-box has-image">
+          <img src="${cp.image}" alt="${cp.store}" class="coupon-card-image-preview" onclick="zoomTicketQR('${cp.store} 折價券', '${cp.image}')">
+        </div>
+      `;
+    } else {
+      imageContent = `
+        <div class="coupon-card-image-box">
+          <label class="coupon-card-image-placeholder">
+            <i data-lucide="image"></i>
+            <span>點擊上傳優惠券圖檔</span>
+            <input type="file" style="display: none;" class="coupon-file-input" data-id="${cp.id}">
+          </label>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="coupon-card-header">
+        <div>
+          <div class="coupon-card-store">${cp.store}</div>
+          <div class="coupon-card-title">${cp.title}</div>
+        </div>
+        <button class="app-btn btn-danger btn-sm btn-delete-coupon" data-id="${cp.id}" aria-label="刪除"><i data-lucide="trash-2"></i></button>
+      </div>
+      
+      ${imageContent}
+
+      <div class="coupon-card-actions">
+        <span class="coupon-card-expiry">${cp.expiry ? `有效期限至: ${cp.expiry}` : "無期限限制"}</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="app-btn btn-secondary btn-sm btn-edit-coupon" data-id="${cp.id}"><i data-lucide="edit"></i> 編輯</button>
+          <div class="app-btn btn-primary btn-sm coupon-upload-btn">
+            <i data-lucide="upload"></i> ${cp.image ? "重傳" : "上傳"}
+            <input type="file" class="coupon-file-input" data-id="${cp.id}" accept="image/*">
+          </div>
+        </div>
+      </div>
+    `;
+
+    grid.appendChild(card);
+  });
+
+  container.appendChild(grid);
+
+  // Bind upload handlers
+  container.querySelectorAll(".coupon-file-input").forEach(input => {
+    input.onchange = (e) => {
+      const id = input.getAttribute("data-id");
+      if (e.target.files && e.target.files[0]) {
+        handleCouponImageUpload(e.target.files[0], id);
+      }
+    };
+  });
+
+  // Bind edit/delete handlers
+  container.querySelectorAll(".btn-edit-coupon").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      openCouponModal(id);
+    };
+  });
+
+  container.querySelectorAll(".btn-delete-coupon").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      deleteCoupon(id);
+    };
+  });
+}
+
+function handleCouponImageUpload(file, couponId) {
+  if (!file.type.startsWith("image/")) {
+    alert("請選擇圖片格式的檔案！");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Max size for coupon image is 800px width/height to preserve barcodes
+      const maxDim = 800;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        }
+      } else {
+        if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to compressed jpeg base64
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+
+      // Save to state
+      const coupon = APP_STATE.coupons.find(c => c.id === couponId);
+      if (coupon) {
+        coupon.image = compressedDataUrl;
+        saveState(APP_STATE);
+        renderCoupons();
+        if (window.lucide) window.lucide.createIcons();
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteCoupon(id) {
+  if (confirm("您確定要刪除這張優惠券嗎？")) {
+    APP_STATE.coupons = APP_STATE.coupons.filter(c => c.id !== id);
+    saveState(APP_STATE);
+    renderCoupons();
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function openCouponModal(id = null) {
+  closeAllModals();
+  const modal = document.getElementById("modal-coupon");
+  if (!modal) return;
+
+  const titleNode = document.getElementById("coupon-modal-title");
+  const idInput = document.getElementById("coupon-id-input");
+  const storeInput = document.getElementById("cp-modal-store");
+  const descInput = document.getElementById("cp-modal-title");
+  const expiryInput = document.getElementById("cp-modal-expiry");
+
+  if (id) {
+    const cp = APP_STATE.coupons.find(c => c.id === id);
+    if (cp) {
+      titleNode.textContent = "編輯優惠券";
+      idInput.value = cp.id;
+      storeInput.value = cp.store;
+      descInput.value = cp.title;
+      expiryInput.value = cp.expiry || "";
+    }
+  } else {
+    titleNode.textContent = "新增優惠券";
+    idInput.value = "";
+    storeInput.value = "";
+    descInput.value = "";
+    expiryInput.value = "";
+  }
+
+  modal.classList.add("active");
+}
+
+function onCouponFormSubmit(evt) {
+  evt.preventDefault();
+
+  const id = document.getElementById("coupon-id-input").value;
+  const store = document.getElementById("cp-modal-store").value.trim();
+  const title = document.getElementById("cp-modal-title").value.trim();
+  const expiry = document.getElementById("cp-modal-expiry").value;
+
+  if (!store || !title) {
+    alert("請輸入店家與優惠內容說明");
+    return;
+  }
+
+  const cpItem = {
+    id: id || `coupon-${Date.now()}`,
+    store,
+    title,
+    expiry: expiry || null,
+    image: id ? (APP_STATE.coupons.find(c => c.id === id)?.image || "") : ""
+  };
+
+  if (id) {
+    const idx = APP_STATE.coupons.findIndex(c => c.id === id);
+    if (idx !== -1) APP_STATE.coupons[idx] = cpItem;
+  } else {
+    APP_STATE.coupons.push(cpItem);
+  }
+
+  saveState(APP_STATE);
+  closeAllModals();
+  renderCoupons();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+
 
 // ==========================================================================
 // 5. Utility Data Helper Functions
@@ -3667,6 +4226,16 @@ function initFormControllers() {
     formPacking.onsubmit = onPackingFormSubmit;
   }
 
+  const formShoppingItem = document.getElementById("form-shopping-item");
+  if (formShoppingItem) {
+    formShoppingItem.onsubmit = onShoppingItemFormSubmit;
+  }
+
+  const formCoupon = document.getElementById("form-coupon");
+  if (formCoupon) {
+    formCoupon.onsubmit = onCouponFormSubmit;
+  }
+
   // Add Item Openers
   document.getElementById("btn-add-expense").onclick = () => openExpenseModal(null);
   document.getElementById("btn-add-itinerary").onclick = () => openItineraryModal(null);
@@ -3675,6 +4244,16 @@ function initFormControllers() {
   const btnAddPacking = document.getElementById("btn-add-packing");
   if (btnAddPacking) {
     btnAddPacking.onclick = () => openPackingModal(null);
+  }
+
+  const btnAddShoppingItem = document.getElementById("btn-add-shopping-item");
+  if (btnAddShoppingItem) {
+    btnAddShoppingItem.onclick = () => openShoppingItemModal(null);
+  }
+
+  const btnAddCoupon = document.getElementById("btn-add-coupon");
+  if (btnAddCoupon) {
+    btnAddCoupon.onclick = () => openCouponModal(null);
   }
   
   const addTrBtn = document.getElementById("btn-add-transport");

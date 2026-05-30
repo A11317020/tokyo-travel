@@ -2376,4 +2376,170 @@ a:hover {
   border-radius: var(--radius-tag);
 }
 
+/* ==========================================================================
+   Shopping & Coupons Layout
+   ========================================================================== */
+.sub-tab-nav {
+  display: flex;
+  gap: 12px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 2px;
+}
+
+.sub-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition);
+  border-radius: var(--radius-btn) var(--radius-btn) 0 0;
+}
+
+.sub-tab-btn:hover {
+  color: var(--primary);
+  background: var(--surface-soft);
+}
+
+.sub-tab-btn.active {
+  color: var(--secondary);
+  border-bottom-color: var(--secondary);
+  background: var(--surface-soft);
+}
+
+/* Coupons Wallet Grid */
+.coupons-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .coupons-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.coupon-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  gap: 14px;
+}
+
+.coupon-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--secondary);
+}
+
+.coupon-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.coupon-card-store {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.coupon-card-title {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.coupon-card-expiry {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.coupon-card-image-box {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background: var(--surface-soft);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-btn);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.coupon-card-image-box.has-image {
+  border-style: solid;
+}
+
+.coupon-card-image-box:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.coupon-card-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: zoom-in;
+  background: white;
+}
+
+.coupon-card-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.coupon-card-image-placeholder i {
+  width: 32px;
+  height: 32px;
+}
+
+.coupon-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.coupon-upload-btn {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.coupon-upload-btn input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+
 

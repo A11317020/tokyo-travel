@@ -70,6 +70,10 @@
           <i data-lucide="luggage"></i>
           <span>行李清單</span>
         </button>
+        <button class="nav-item" data-view="shopping" id="btn-side-shopping">
+          <i data-lucide="shopping-bag"></i>
+          <span>購物優惠</span>
+        </button>
       </nav>
       <div class="sidebar-footer">
         <button class="theme-toggle-btn" id="theme-toggle-desktop" aria-label="切換主題">
@@ -601,6 +605,63 @@
           </div>
         </section>
 
+        <!-- View: Shopping & Coupons -->
+        <section class="view-panel" id="view-shopping">
+          <div class="page-header-block">
+            <div>
+              <h2 class="page-title">購物與優惠券</h2>
+              <p class="page-desc">管理日本行購物清單與使用免稅折價券</p>
+            </div>
+            <div class="header-actions-group" style="display: flex; gap: 8px;">
+              <button class="app-btn btn-primary" id="btn-add-shopping-item">
+                <i data-lucide="plus"></i> 新增項目
+              </button>
+              <button class="app-btn btn-secondary" id="btn-add-coupon">
+                <i data-lucide="plus"></i> 新增優惠券
+              </button>
+            </div>
+          </div>
+
+          <!-- Sub Tab navigation -->
+          <div class="sub-tab-nav" style="margin-bottom: 20px;">
+            <button class="sub-tab-btn active" data-subview="shop-list">
+              <i data-lucide="shopping-cart"></i> 購物清單
+            </button>
+            <button class="sub-tab-btn" data-subview="shop-coupons">
+              <i data-lucide="ticket"></i> 優惠券夾
+            </button>
+          </div>
+
+          <div class="shopping-view-layout">
+            <!-- Subview: Shopping List -->
+            <div class="subview-content active" id="subview-shop-list">
+              <!-- Progress stats bar -->
+              <div class="shopping-progress-bar-container" style="background: var(--surface-soft); padding: 16px; border-radius: var(--radius-card); margin-bottom: 24px; border: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-weight: 600; font-size: 0.95rem;">採購進度</span>
+                  <span id="shopping-progress-percent" style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">0%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden;">
+                  <div id="shopping-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--secondary), var(--success)); transition: width 0.3s ease;"></div>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;" id="shopping-progress-text">已採購 0 / 0 件物品</div>
+              </div>
+
+              <!-- Shopping list categorized -->
+              <div class="shopping-lists-container" id="shopping-items-container">
+                <!-- JS generates categories & checkbox rows here -->
+              </div>
+            </div>
+
+            <!-- Subview: Coupons Wallet -->
+            <div class="subview-content" id="subview-shop-coupons" style="display: none;">
+              <div class="coupons-grid" id="coupons-grid-container">
+                <!-- JS generates coupon cards here -->
+              </div>
+            </div>
+          </div>
+        </section>
+
       </div>
 
       <!-- Mobile Bottom Navigation -->
@@ -660,6 +721,10 @@
             <button class="more-menu-item" data-view="packing">
               <i data-lucide="luggage" class="text-primary"></i>
               <span>行李清單</span>
+            </button>
+            <button class="more-menu-item" data-view="shopping">
+              <i data-lucide="shopping-bag" class="text-accent"></i>
+              <span>購物優惠</span>
             </button>
           </div>
         </div>
@@ -1412,6 +1477,78 @@
       </form>
     </div>
   </div>
+
+  <!-- Modal: Shopping Item Form -->
+  <div class="modal" id="modal-shopping-item">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="shopping-item-modal-title">新增購物項目</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-shopping-item" class="modal-form">
+        <input type="hidden" id="shopping-item-id-input">
+        
+        <div class="form-group">
+          <label for="shop-modal-name">項目名稱 <span class="required">*</span></label>
+          <input type="text" id="shop-modal-name" placeholder="例如: EVE 止痛藥、發熱衣、伴手禮..." required>
+        </div>
+
+        <div class="form-group">
+          <label for="shop-modal-category">分類 <span class="required">*</span></label>
+          <select id="shop-modal-category" required>
+            <option value="服飾 / 配件">服飾 / 配件</option>
+            <option value="藥妝 / 保健類">藥妝 / 保健類</option>
+            <option value="美妝 / 保養類">美妝 / 保養類</option>
+            <option value="模型 / 玩具">模型 / 玩具</option>
+            <option value="電器 / 3C">電器 / 3C</option>
+            <option value="零食 / 伴手禮">零食 / 伴手禮</option>
+            <option value="其他 / 代購">其他 / 代購</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-shopping-item">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存項目</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Coupon Form -->
+  <div class="modal" id="modal-coupon">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="coupon-modal-title">新增優惠券</h3>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="form-coupon" class="modal-form">
+        <input type="hidden" id="coupon-id-input">
+        
+        <div class="form-group">
+          <label for="cp-modal-store">商家/店鋪名稱 <span class="required">*</span></label>
+          <input type="text" id="cp-modal-store" placeholder="例如: 松本清、唐吉訶德..." required>
+        </div>
+
+        <div class="form-group">
+          <label for="cp-modal-title">優惠內容說明 <span class="required">*</span></label>
+          <input type="text" id="cp-modal-title" placeholder="例如: 免稅 10% + 5% OFF 折價券" required>
+        </div>
+
+        <div class="form-group">
+          <label for="cp-modal-expiry">有效期限</label>
+          <input type="date" id="cp-modal-expiry">
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="app-btn btn-ghost" id="btn-cancel-coupon">取消</button>
+          <button type="submit" class="app-btn btn-primary">儲存項目</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 
   <!-- Lightbox for Ticket QR Codes -->
   <div class="modal" id="modal-ticket-lightbox">
