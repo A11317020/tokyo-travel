@@ -367,15 +367,15 @@ const DEFAULT_ITINERARIES = [
     area: "三之輪",
     title: "更換住宿 Check in (最後一晚)",
     category: "住宿",
-    locationName: "三之輪站附近民宿 (待補)",
-    address: "東京都荒川區南千住 (詳細待補)",
-    googleMapUrl: "",
+    locationName: "Nanayado Asakusa Minowa なな宿 浅草三ノ輪",
+    address: "Nanayado Asakusa Minowa なな宿 浅草三ノ輪",
+    googleMapUrl: "https://www.google.com/maps/search/?api=1&query=Nanayado+Asakusa+Minowa",
     transportNote: "從上野搭乘地鐵日比谷線至三之輪站",
     reservationStatus: "pending",
     priority: "high",
     isFlexible: false,
     backupPlan: "",
-    note: "換宿點！詳細民宿資訊（名稱、密碼、費用）仍有待確認"
+    note: "換宿點！詳細民宿地址已更新為 Nanayado Asakusa Minowa なな宿 浅草三ノ輪，其他訂房與密碼資訊仍有待確認"
   },
   {
     id: "iti-16",
@@ -450,14 +450,14 @@ const DEFAULT_ACCOMMODATIONS = [
     checkOutDate: "2026-06-28",
     checkInTime: "16:00",
     checkOutTime: "10:00",
-    address: "待確認",
+    address: "Nanayado Asakusa Minowa なな宿 浅草三ノ輪",
     bookingPlatform: "待補",
     bookingNumber: "待補",
     payer: "待補",
-    totalAmount: 0,
-    perPersonAmount: 0,
+    totalAmount: 4750,
+    perPersonAmount: 950,
     luggageNote: "待補",
-    note: "因航班改期追加的最後一晚住宿，尚缺乏詳細地址與訂房資訊！",
+    note: "因航班改期追加的最後一晚住宿，地址與費用已補齊，尚缺乏訂房平台與密碼資訊！",
     nearbyStores: []
   }
 ];
@@ -664,7 +664,7 @@ const DEFAULT_EXPENSES = [
   {
     id: "exp-3",
     date: "2026-05-10",
-    itemName: "田端公寓式民宿 (5人, 5晚)",
+    itemName: "住宿費總額：田端民宿(5晚) & 三之輪民宿(1晚)",
     category: "住宿",
     amount: 35880, // NT$ (6226 + 950) * 5
     currency: "TWD",
@@ -674,7 +674,7 @@ const DEFAULT_EXPENSES = [
     customAmounts: {},
     paymentMethod: "信用卡",
     settlementStatus: "unsettled",
-    note: "陳代刷 Airbnb 訂房費用，每人應分攤 NT$ 7,176"
+    note: "陳代付所有住宿費用，每人分攤 NT$ 7,176 (含田端 NT$ 6,226 與三之輪 NT$ 950)"
   },
   {
     id: "exp-4",
@@ -849,6 +849,46 @@ function loadState() {
         }
         if (!parsed.coupons) {
           parsed.coupons = DEFAULT_COUPONS;
+          isModified = true;
+        }
+
+        // Migrate Minowa lodging address if it doesn't contain "Nanayado"
+        const acc2 = parsed.accommodations.find(a => a.id === "acc-2");
+        if (acc2) {
+          if (!acc2.address || !acc2.address.includes("Nanayado")) {
+            acc2.address = "Nanayado Asakusa Minowa なな宿 浅草三ノ輪";
+            isModified = true;
+          }
+          if (acc2.totalAmount !== 4750) {
+            acc2.totalAmount = 4750;
+            acc2.perPersonAmount = 950;
+            acc2.note = "因航班改期追加的最後一晚住宿，地址與費用已補齊，尚缺乏訂房平台與密碼資訊！";
+            isModified = true;
+          }
+        }
+
+        // Remove duplicate Minowa accommodation expense (exp-9) if present in state
+        const exp9Index = parsed.expenses.findIndex(e => e.id === "exp-9");
+        if (exp9Index !== -1) {
+          parsed.expenses.splice(exp9Index, 1);
+          isModified = true;
+        }
+
+        // Migrate exp-3 to reflect both Tabata and Minowa lodgings to avoid confusion
+        const exp3 = parsed.expenses.find(e => e.id === "exp-3");
+        if (exp3 && exp3.itemName !== "住宿費總額：田端民宿(5晚) & 三之輪民宿(1晚)") {
+          exp3.itemName = "住宿費總額：田端民宿(5晚) & 三之輪民宿(1晚)";
+          exp3.note = "陳代付所有住宿費用，每人分攤 NT$ 7,176 (含田端 NT$ 6,226 與三之輪 NT$ 950)";
+          isModified = true;
+        }
+
+        // Migrate iti-15 (Minowa Check in) address if it doesn't contain "Nanayado"
+        const iti15 = parsed.itineraries.find(i => i.id === "iti-15");
+        if (iti15 && (!iti15.address || !iti15.address.includes("Nanayado"))) {
+          iti15.address = "Nanayado Asakusa Minowa なな宿 浅草三ノ輪";
+          iti15.locationName = "Nanayado Asakusa Minowa なな宿 浅草三ノ輪";
+          iti15.googleMapUrl = "https://www.google.com/maps/search/?api=1&query=Nanayado+Asakusa+Minowa";
+          iti15.note = "換宿點！詳細民宿地址已更新為 Nanayado Asakusa Minowa なな宿 浅草三ノ輪，其他訂房與密碼資訊仍有待確認";
           isModified = true;
         }
 
@@ -1564,7 +1604,7 @@ function renderAccommodations() {
     card.className = "lodging-card-box";
 
     // Show warnings if Minowa detail is empty / missing
-    const hasDataGap = acc.address === "待確認" || acc.bookingPlatform === "待補";
+    const hasDataGap = !acc.address || acc.address === "待確認" || acc.bookingPlatform === "待補";
     const statusTag = hasDataGap ? `<span class="badge badge-danger">缺詳細資料</span>` : `<span class="badge badge-success">預訂已完成</span>`;
 
     let storesListHtml = "";
@@ -1583,7 +1623,7 @@ function renderAccommodations() {
       `;
     }
 
-    const mapBtn = acc.address !== "待確認" ? `
+    const mapBtn = (acc.address && acc.address !== "待確認" && acc.address !== "待補") ? `
       <a href="https://maps.google.com/?q=${encodeURIComponent(acc.address)}" target="_blank" class="app-btn btn-secondary btn-sm">
         <i data-lucide="map"></i> 開啟地圖
       </a>
